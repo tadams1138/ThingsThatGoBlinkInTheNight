@@ -12,12 +12,12 @@ cat > toc.html << EOF
     <title>Table of Contents</title>
 </head>
 <body>
-<a href="#" class="feed">Subscribe to the feed</a>
+<a href="$siteRoot/rss.xml" class="feed">Subscribe to the feed</a>
 <ul>
 EOF
 
 cat > toc.txt << EOF
-<a href="#" class="feed">Subscribe to the feed</a>
+<a href="$siteRoot/rss.xml" class="feed">Subscribe to the feed</a>
 <ul>
 EOF
 
