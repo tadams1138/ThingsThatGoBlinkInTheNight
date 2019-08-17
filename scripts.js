@@ -9,16 +9,12 @@ function GetResource(url, OnSuccess) {
     request.send();
 }
 
-function LoadTOC() {
+function LoadTOC(url) {
     let navigationDiv = document.getElementById("navigation");
     if (navigationDiv !== null) {
-        GetResource("../../toc.txt", function (responseText) {
+        GetResource(url, function (responseText) {
             navigationDiv.innerHTML = responseText;
         });
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    LoadTOC();
-});
 
