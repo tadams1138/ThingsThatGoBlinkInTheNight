@@ -17,10 +17,16 @@ h1 {
     color: #AE8ABE;
 }
 
+.feed {
+    margin-left: 3px;
+    padding: 0 0 0 19px;
+    background: url("feed-icon-14x14.png") no-repeat 0 50%;
+}
+
 .navigation {
     background: #3c3f41;
     margin: 20px;
     position:fixed;
-    right: 0px;
+    right: 0;
     width: 300px;
 }

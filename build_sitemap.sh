@@ -6,8 +6,7 @@ cat > sitemap.xml << EOF
 EOF
 
 find . -name '*.html' | sort -r | while read fname; do
-  title=$fname
-  [[ "$fname" = "./toc.html" || "$fname" = "./index.html" ]] && frequency="weekly" || frequency="never"
+  [[ "$fname" = "./index.html" ]] && frequency="weekly" || frequency="never"
 cat >> sitemap.xml << EOF
    <url>
       <loc>https://www.tandisoft.com/${fname:2}</loc>
