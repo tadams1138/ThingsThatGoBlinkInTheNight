@@ -19,4 +19,3 @@ done
 cat >> sitemap.xml << EOF
 </urlset>
 EOF
-
