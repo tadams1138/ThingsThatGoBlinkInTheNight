@@ -1,5 +1,26 @@
 body {
-    margin: 20px;
     background-color: #2b2b2b;
-    color: lightgray;
+    color: #A9B7C6;
+    margin: 20px;
+    padding-right: 300px;
+}
+
+a:link {
+    color: #d1bc62;
+}
+
+a:visited {
+    color: #c37432;
+}
+
+h1 {
+    color: #AE8ABE;
+}
+
+.navigation {
+    background: #3c3f41;
+    margin: 20px;
+    position:fixed;
+    right: 0px;
+    width: 300px;
 }

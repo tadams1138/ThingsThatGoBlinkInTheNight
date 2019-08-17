@@ -1,5 +1,7 @@
 #!/bin/bash
 
+siteRoot=$1
+
 cat > toc.html << EOF
 <!DOCTYPE html>
 <html lang="en">
@@ -16,8 +18,9 @@ EOF
 
 find . -name '*.html' | sort -r | while read fname; do
     title="$(grep -P -o '(?<=<title>).*(?=</title>)' $fname)"
+    href="$siteRoot${fname:1}"
 cat >> toc.html << EOF
-<li><a href="$fname">$title</a></li>
+<li><a href="$href">$title</a></li>
 EOF
 done
 
