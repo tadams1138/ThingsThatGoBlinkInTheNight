@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Infinite recursion with an XML schema</title>
+    <link rel="icon" href="../../favicon.ico">
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<h1>Infinite recursion with an XML schema</h1>
+<pre class="xml"><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified"&gt;
+    &lt;xs:element name="How_To_Have_A_Bad_Day" type="InfiniteNode"&gt;
+        &lt;xs:annotation&gt;
+            &lt;xs:documentation&gt;Well guess who learned you could do infinite recursion with XML today.&lt;/xs:documentation&gt;
+        &lt;/xs:annotation&gt;
+    &lt;/xs:element&gt;
+    &lt;xs:complexType name="InfiniteNode"&gt;
+        &lt;xs:sequence&gt;
+            &lt;xs:element name="AnotherNode" type="InfiniteNode"/&gt;
+        &lt;/xs:sequence&gt;
+    &lt;/xs:complexType&gt;
+&lt;/xs:schema&gt;</code></pre>
+
+<p>And now to validate my XML....</p>
+
+</body>
+</html>

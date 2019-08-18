@@ -1,4 +1,6 @@
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
+.idea
+/index.html
+/rss.xml
+/sitemap.xml
+/toc.html
+/toc.txt
