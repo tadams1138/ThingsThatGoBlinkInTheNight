@@ -5,29 +5,29 @@
     <link>https://www.tandisoft.com</link>
     <description>A blog for Tom Adams tech ramblings</description>
     <item>
+      <title>Obfuscating with Dotfuscator</title>
+      <link>https://www.tandisoft.com/2011/08/2011-08-23.html</link>
+      <description>Obfuscating with Dotfuscator</description>
+    </item>
+    <item>
       <title>Replacement for .Net Reflector</title>
-      <link>https://www.tandisoft.com/2011/06/2011-07-29.html</link>
+      <link>https://www.tandisoft.com/2011/07/2011-07-29.html</link>
       <description>Replacement for .Net Reflector</description>
     </item>
     <item>
       <title>Improving Project Server 2007 Performance</title>
-      <link>https://www.tandisoft.com/2011/06/2011-07-22.html</link>
+      <link>https://www.tandisoft.com/2011/07/2011-07-22.html</link>
       <description>Improving Project Server 2007 Performance</description>
     </item>
     <item>
       <title>"Unable to generate wrapper classes since no InteropForms were found."</title>
-      <link>https://www.tandisoft.com/2011/06/2011-07-20.html</link>
+      <link>https://www.tandisoft.com/2011/07/2011-07-20.html</link>
       <description>"Unable to generate wrapper classes since no InteropForms were found."</description>
     </item>
     <item>
       <title>Change Passwords in Sharepoint without using Forms Authentication</title>
       <link>https://www.tandisoft.com/2011/06/2011-06-03.html</link>
       <description>Change Passwords in Sharepoint without using Forms Authentication</description>
-    </item>
-    <item>
-      <title>Infinite recursion with an XML schema</title>
-      <link>https://www.tandisoft.com/2011/02/2011-02-18.html</link>
-      <description>Infinite recursion with an XML schema</description>
     </item>
   </channel>
 </rss>

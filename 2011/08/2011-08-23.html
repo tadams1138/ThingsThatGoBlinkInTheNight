@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Obfuscating with Dotfuscator</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Obfuscating with Dotfuscator</h1>
+        <h3>Without installing Dotfuscator to every engineer's system</h3>
+    </header>
+
+    <p>.Net assemblies are easily deconstructed into readable code. You can use tools like Red-Gate’s Reflector (<a
+            href="http://www.reflector.net/">http://www.reflector.net/</a>) or ILSpy (<a
+            href="http://wiki.sharpdevelop.net/ILSpy.ashx">http://wiki.sharpdevelop.net/ILSpy.ashx</a>) to view the
+        contents of a .Net assembly. This poses a problem both for intellectual property reasons where we don’t want our
+        competitors to know how we did something as well as for security reasons where we don’t want a hacker to know
+        what our security algorithms might be. For this reason, we must obfuscate and encrypt our code. Obfuscation
+        simply makes the assembly harder to read, not impossible to read. So it acts as a deterrent to anyone we don’t
+        explicitly want reading our code.</p>
+
+    <h2>Our process</h2>
+    <p>Each engineer is responsible with making sure their code is properly obfuscated before it is released. They have
+        to make sure their project contains all the necessary code so that it gets obfuscated. Following that, they
+        commit their code to the code server which will compile and obfuscate it before copying it to the Latest Builds
+        shared folder on our network.</p>
+
+    <p>The .NET Framework provides custom attributes designed to make it easy to automatically obfuscate assemblies
+        without having to set up configuration files. You can read about those here: <a
+                href="http://msdn.microsoft.com/en-us/library/ms227281.aspx">http://msdn.microsoft.com/en-us/library/ms227281.aspx</a>.
+        We use Dotfuscator by Preemptive (<a href="http://www.preemptive.com/">http://www.preemptive.com/</a>) to
+        obfuscate our assemblies. Dotfuscator will read the custom attributes in .Net and act accordingly.</p>
+
+    <h2>Create a post-build event to obfuscate your build output</h2>
+    <p>In VB.Net go to the project properties, select Compile and click the Build Events... button
+
+    <p>In C# go to the project properties and click on Build Events.</p>
+
+    <p>The following script will obfuscate the assembly post-compile.</p>
+
+    <pre><code>IF $(ConfigurationName) == Release (
+   IF EXIST "$(dotfuscator)" (
+      IF NOT EXIST "$(ObfuscationMapFolder)\$(ProjectName)" md "$(ObfuscationMapFolder)\$(ProjectName)"
+      IF NOT EXIST "$(ObfuscationMapFolder)\$(ProjectName)\map.xml" copy "$(ObfuscationMapFolder)\map.xml" "$(ObfuscationMapFolder)\$(ProjectName)"
+      "$(dotfuscator)" /in:"$(TargetPath)" /out:"$(TargetDir)Obfuscated" /honor:on /strip:on /prune:off /enhancedOI:on /suppress:on /mapin:"$(ObfuscationMapFolder)\$(ProjectName)\map.xml" /mapout:"$(ObfuscationMapFolder)\$(ProjectName)\map.xml" /debug:pdb
+      copy /Y "$(TargetDir)Obfuscated\$(TargetFileName)" "$(TargetPath)"
+      rmdir /S /Q "$(TargetDir)Obfuscated"
+   )
+)
+</code></pre>
+
+    <p><code>$(dotfuscator)</code> refers to an Environment variable (like Path or Windir). If it is not set on your
+        system (it should only be set on the build machine) then the <code>IF EXIST</code> statement will be false and
+        the rest of the script will not run.</p>
+
+    <p><code>$(ObfuscationMapFolder)</code> refers to an Environment variable (like Path or Windir). It should contain
+        the path to the location of the map files.</p>
+
+    <p>The options set in this example are:</p>
+
+    <ul>
+        <li>To “honor” obfuscation attributes to be detailed in later slides as opposed to ignoring those attributes.
+        </li>
+        <li>To “strip” obfuscation attributes out of the assemblies. This makes it more difficult for anyone to
+            determine what our obfuscation strategy was.
+        </li>
+        <li>Prune is off. We do not need to remove “unused” classes. Enabling this option has given me headaches in the
+            past since it will remove classes not specifically mentioned in code, but rather mentioned elsewhere like in
+            the app config file. The classes may actually be in use, but the obfuscation engine just can’t tell. If a
+            class is unnecessary in a compile, remove it from the project yourself. Don’t expect the obfuscator to do
+            it.
+        </li>
+        <li>“EnhancedOI:on” enables Enhanced Overload Induction. EnhancedOI enables a method’s return type or a field's
+            type to be used as a criterion in determining method or field uniqueness. This feature can allow up to 15
+            percent more redundancy in method and field renames. In addition, since overloading on method return type or
+            field type is typically not allowed in source languages (including C# and VB), this further hinders
+            decompilers.
+        </li>
+        <li>Suppress is on. It adds the SuppressIldasmAttribute attribute to the assembly which prevents the Ildasm.exe
+            (MSIL Disassembler) from disassembling it.
+        </li>
+        <li>The map file options indicate where to write the map file as well as where to read the previous map file.
+            Dotfuscator reads the previous map file to find out what the assembly’s elements were renamed to so that it
+            can rename them consistently. When you add new elements to rename, those elements are added and written to
+            the new map file. The old map file is renamed usually. The map file helps you debug a stack trace where the
+            names of methods are completely unhelpful (e.g. method a() called method b() ). Use the “Lucidator” tool to
+            debug a stack trace using a map file.
+        </li>
+        <li>The debug option is set to generate pdb file which can be used to debug an assembly while it is running.
+        </li>
+    </ul>
+    <p>You can run Dotfuscator.exe with the /? option from the command line to get a list of all available options and
+        their defaults. We use the default settings for everything except the above mentioned settings. We also specify
+        prune be set to off (it’s default) only because dotfuscator appears to prune classes if I do not specify it.</p>
+
+    <h2>Environment variables</h2>
+    <p>Got to thank the guys at stackoverflow.com for tipping me off to this (<a
+            href="http://stackoverflow.com/questions/128634/how-to-use-system-environment-variables-in-vs-2008-post-build-events">http://stackoverflow.com/questions/128634/how-to-use-system-environment-variables-in-vs-2008-post-build-events</a>).
+    </p>
+
+    <p>You can reference any environment variable in the pre or post-build events by stating it like this <code>$(variableName)</code>.
+        This can be helpful when trying to determine if your system has certain components installed or not during the
+        build process. Otherwise the build process would report a failure if the build event returned an error.</p>
+
+    <h2>Nested Conditional Statements and other neat command line tricks</h2>
+    <p>The build events are treated exactly the same as the commands in a batch file. Certain commands, such as for,
+        goto, and if, enable you to do conditional processing of the commands in the build event. For example, the if
+        command carries out a command based on the results of a condition. Other commands allow you to control output
+        and call other batch files. For more information about batch file operations, see <a
+                href="http://www.microsoft.com/resources/documentation/windows/xp/all/proddocs/en-us/ntcmds.mspx?mfr=true">http://www.microsoft.com/resources/documentation/windows/xp/all/proddocs/en-us/ntcmds.mspx?mfr=true</a>.
+    </p>
+
+    <p>Add a call statement before all post-build commands that run .bat files.</p>
+
+    <p>For a full list of commands you can use in a build event try <a
+            href="http://www.microsoft.com/resources/documentation/windows/xp/all/proddocs/en-us/ntcmds.mspx?mfr=true">http://www.microsoft.com/resources/documentation/windows/xp/all/proddocs/en-us/ntcmds.mspx?mfr=true</a>.
+    </p>
+
+    <h2>Add assembly attributes</h2>
+    <p>You should add the following attributes to the Assembly file.</p>
+
+    <pre><code>&lt;Assembly: ObfuscateAssemblyAttribute(True, StripAfterObfuscation:=True)&gt;</code></pre>
+
+    <p>The <code>ObfuscateAssemblyAttribute</code> attribute instructs dotfuscator to use its standard obfuscation rules
+        for the appropriate assembly type.</p>
+
+    <p>The first argument, <code>assemblyIsPrivate</code>, is set to <code>True</code> in the example code above. It
+        should be true for any assembly that will not be referenced by other assemblies. A public assembly, a library
+        referenced by another assembly for instance, should have this argument set to False so that the obfuscator will
+        use default settings appropriate for a public assembly.</p>
+
+    <p>The <code>StripAfterObfuscation</code> property is <code>true</code>, to so that the attributes are stripped
+        after processing.</p>
+
+    <p>Remember to import (using in C#) the System.Reflection namespace to use the ObfuscateAssembly attribute.</p>
+
+    <h2>To prevent renaming of a specific class</h2>
+    <p>You may have a class or structure referenced by name elsewhere. For instance an application configuration file
+        may reference a class by name</p>
+
+    <p>For example:</p>
+
+    <pre class="vb"><code>&lt;userNameAuthentication userNamePasswordValidationMode="Custom"
+        customUserNamePasswordValidatorType="GCDataService.Configuration.SetConfigurationUserNameValidator,GCDataService"/&gt;</code></pre>
+
+    <p>We do not want to rename this class, but we have no problem obfuscating the class’s contents. So we write this
+        attribute above the class</p>
+
+    <pre class="vb"><code>&lt;Obfuscation(ApplyToMembers:=False, Exclude:=True)&gt;</code></pre>
+
+    <p>This will exclude the class from the obfuscation rules, but all class members will still have the default
+        obfuscation rules applied to it. Remember to import (using in C#) the System.Reflection namespace to use the
+        Obfuscation attribute.</p>
+
+    <h2>To prevent a class from having any part of it obfuscated</h2>
+    <p>You may have a class or structure that needs to be publicly exposed and you don’t want any part of it obfuscated.
+        Instances of this might be WCF endpoint contracts (interfaces).</p>
+
+    <p>We do not want to rename this class, no do we want to obfuscate any of its contents. So we write this attribute
+        above the class:</p>
+
+    <pre class="vb"><code>&lt;Obfuscation(ApplyToMembers:=True, Exclude:=True)&gt;</code></pre>
+
+    <p>This will exclude the class/structure and all of its members from the obfuscation rules. Remember to import
+        (using in C#) the System.Reflection namespace to use the Obfuscation attribute.</p>
+
+    <h2>To encrypt the contents of a string</h2>
+    <p>The string constants that you enter into a .Net assembly are easily readable. If they contain anything remotely
+        sensitive, you must encrypt them before we release them to the public.</p>
+
+    <p>An example of a string you need to encrypt:</p>
+
+    <pre class="vb"><code>Private Shared Function ConnectionString() As String
+    Return "Password=1234;Data Source=" & PermissionsDB
+End Function</code></pre>
+
+    <p>To encrypt the contents of a function add the following attribute to the top of the method to encrypt:</p>
+
+    <pre class="vb"><code>&lt;Obfuscation(Feature:="stringencryption", Exclude:=False)&gt;</code></pre>
+
+    <p>You must set Exclude to false, because the default for string encryption is to not encrypt (ie exclude) all
+        methods. Store sensitive strings inside of functions or methods that you can add this attribute to. You cannot
+        apply this attribute to a variable, so do not assign a sensitive string to a member variable of a class on the
+        same line where you declare that variable. Remember to import (using in C#) the System.Reflection namespace to
+        use the Obfuscation attribute.</p>
+    <p>And that is all I have to say about that.</p>
+</article>
+</body>
+</html>
