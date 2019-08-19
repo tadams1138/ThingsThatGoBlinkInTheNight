@@ -8,25 +8,26 @@
 </head>
 <body onload="LoadTOC('../../toc.txt')">
 <div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
-<h1>Improving Project Server 2007 Performance</h1>
-<p>Well I have just been a little irritable all day, and I guess the 1:40 load time for the Project Web Access (PWA)
-    page was the straw that broke the camel’s back. I dedicated all day to trying to figure out why our Project server
-    was so darn slow for whoever first accessed it.</p>
+<article>
+    <h1>Improving Project Server 2007 Performance</h1>
+    <p>Well I have just been a little irritable all day, and I guess the 1:40 load time for the Project Web Access (PWA)
+        page was the straw that broke the camel’s back. I dedicated all day to trying to figure out why our Project
+        server was so darn slow for whoever first accessed it.</p>
 
-<h2>PROBLEM:</h2>
+    <h2>PROBLEM:</h2>
 
-<p>The first person to try to load any particular site on our PWA server has to wait close to 2 minutes.</p>
+    <p>The first person to try to load any particular site on our PWA server has to wait close to 2 minutes.</p>
 
-<p>More specifically, the first person to load any particular site after the application pool’s worker process has been
-    started (an IIS Application Pool setting).</p>
+    <p>More specifically, the first person to load any particular site after the application pool’s worker process has
+        been started (an IIS Application Pool setting).</p>
 
-<p>Just to clarify, all subsequent page loads from a site are pretty quick.</p>
+    <p>Just to clarify, all subsequent page loads from a site are pretty quick.</p>
 
-<h2>ENVIRONMENT:</h2>
+    <h2>ENVIRONMENT:</h2>
 
-<p>Our configuration consists of a few workstations on our LAN connecting to a single tower loaded with:</p>
+    <p>Our configuration consists of a few workstations on our LAN connecting to a single tower loaded with:</p>
 
-<pre>
+    <pre>
 Windows Server 2003 R2
 Enterprise x64 Edition
 Service Pack 2
@@ -40,74 +41,75 @@ SharePoint 2007
 Project Server 2007
 </pre>
 
-<h2>TANGENT/VENTING:</h2>
+    <h2>TANGENT/VENTING:</h2>
 
-<p>I could find all kinds of documentation on how to configure farms for better efficiency and how to add a bazillion
-    hard drives to improve performance (essentially one hard drive per conceivable task: 1 for the OS, 1 for the page
-    file, 1 for log writes, 1 for content read/writes, etc.). I cannot afford at this time the hardware improvements
-    that are recommended, and frankly I’m kind of skeptical about their necessity. I don’t understand how we got to the
-    point where I can load up Lego Indiana Jones on the Wii in less time than it took for my desktop to essentially
-    serve up some HTML. Hell, my web browser can parse and render that HTML in a fraction of a percent of the time it
-    took for my server to deliver it. Clearly my server is doing more than it needs to be doing probably because it is
-    optimized for something other than serving a small group of computers on a LAN a few easily modified web pages. It’s
-    too bad I’m not an expert on SharePoint server administration.</p>
+    <p>I could find all kinds of documentation on how to configure farms for better efficiency and how to add a
+        bazillion hard drives to improve performance (essentially one hard drive per conceivable task: 1 for the OS, 1
+        for the page file, 1 for log writes, 1 for content read/writes, etc.). I cannot afford at this time the hardware
+        improvements that are recommended, and frankly I’m kind of skeptical about their necessity. I don’t understand
+        how we got to the point where I can load up Lego Indiana Jones on the Wii in less time than it took for my
+        desktop to essentially serve up some HTML. Hell, my web browser can parse and render that HTML in a fraction of
+        a percent of the time it took for my server to deliver it. Clearly my server is doing more than it needs to be
+        doing probably because it is optimized for something other than serving a small group of computers on a LAN a
+        few easily modified web pages. It’s too bad I’m not an expert on SharePoint server administration.</p>
 
-<h2>NOT A SOLUTION:</h2>
+    <h2>NOT A SOLUTION:</h2>
 
-<p>I saw several posts like <a
-        href="http://www.muhimbi.com/blog/2009/04/new-approach-to-solve-sharepoints.html">this</a> that recommended
-    fixing a problem with regards to "loading signed assemblies the .net Framework checks the Internet based Certificate
-    Revocation List." I tried the solutions that looked practical enough (changing the registry for every conceivable
-    user account is not practicle), and nothing there worked for me.</p>
+    <p>I saw several posts like <a href="http://www.muhimbi.com/blog/2009/04/new-approach-to-solve-sharepoints.html">this</a>
+        that recommended fixing a problem with regards to "loading signed assemblies the .net Framework checks the
+        Internet based Certificate Revocation List." I tried the solutions that looked practical enough (changing the
+        registry for every conceivable user account is not practicle), and nothing there worked for me.</p>
 
-<p>I also saw <a href="http://blogs.technet.com/b/markrussinovich/archive/2009/05/26/3244913.aspx">this</a>, but editing
-    the web.config didn't solve my problem either.</p>
+    <p>I also saw <a href="http://blogs.technet.com/b/markrussinovich/archive/2009/05/26/3244913.aspx">this</a>, but
+        editing the web.config didn't solve my problem either.</p>
 
-<h2>SOLUTION:</h2>
+    <h2>SOLUTION:</h2>
 
-<p>Well lucky for me I found a solution – more like a hack: It does not solve the problem, it just makes it so that you
-    don’t see the problem anymore (probably).</p>
+    <p>Well lucky for me I found a solution – more like a hack: It does not solve the problem, it just makes it so that
+        you don’t see the problem anymore (probably).</p>
 
-<p><a href="http://spwakeup.codeplex.com/">http://spwakeup.codeplex.com/</a></p>
+    <p><a href="http://spwakeup.codeplex.com/">http://spwakeup.codeplex.com/</a></p>
 
-<p>SPWakeup will traverse your PWA server to load up every site on it. This way every site should be cached and ready to
-    go.</p>
+    <p>SPWakeup will traverse your PWA server to load up every site on it. This way every site should be cached and
+        ready to go.</p>
 
-<p>My strategery for accomplishing this was to determine what time of day the IIS Application Pool’s worker process
-    would recycle, and just set that app to run some time after that. To determine when the worker process recycles
-    follow these steps:</p>
+    <p>My strategery for accomplishing this was to determine what time of day the IIS Application Pool’s worker process
+        would recycle, and just set that app to run some time after that. To determine when the worker process recycles
+        follow these steps:</p>
 
-<ol type="1">
-    <li>Start->Administrative Tools->Internet Information Services (IIS) Manager</li>
-    <li>Expand SERVERNAME (local computer)</li>
-    <li>Expand Web Site</li>
     <ol type="1">
-        <li>Right click the name of the website (for me is was Project Web Access)</li>
-        <li>Click Properties</li>
-        <li>Click the Home Directory tab</li>
-        <li>Cake a note of the Application Pool setting at the bottom.</li>
-        <li>Click Cancel to get out of there.</li>
+        <li>Start->Administrative Tools->Internet Information Services (IIS) Manager</li>
+        <li>Expand SERVERNAME (local computer)</li>
+        <li>Expand Web Site</li>
+        <ol type="1">
+            <li>Right click the name of the website (for me is was Project Web Access)</li>
+            <li>Click Properties</li>
+            <li>Click the Home Directory tab</li>
+            <li>Cake a note of the Application Pool setting at the bottom.</li>
+            <li>Click Cancel to get out of there.</li>
+        </ol>
+        <li>Expand Application Pools</li>
+        <ol type="1">
+            <li>Right click the name of the application pool found back in the Home Directory tab</li>
+            <li>Click Properties</li>
+            <li>Make a note of the time of day that the worker process is recycled. On my system, I have it set to
+                Recycle
+                worker processes at the following times: 02:49.
+            </li>
+            <li>Click Cancel to get out of there.</li>
+        </ol>
+        <li>Close Internet Information Service (IIS) Manager.</li>
     </ol>
-    <li>Expand Application Pools</li>
-    <ol type="1">
-        <li>Right click the name of the application pool found back in the Home Directory tab</li>
-        <li>Click Properties</li>
-        <li>Make a note of the time of day that the worker process is recycled. On my system, I have it set to Recycle
-            worker processes at the following times: 02:49.
-        </li>
-        <li>Click Cancel to get out of there.</li>
-    </ol>
-    <li>Close Internet Information Service (IIS) Manager.</li>
-</ol>
 
 
-<p>Now I have SPWakeup3.exe sitting in my server’s Task Scheduler set to run every day roughly an hour after the worker
-    process recycles. My initial page loads are down to around 10-15 seconds now.</p>
+    <p>Now I have SPWakeup3.exe sitting in my server’s Task Scheduler set to run every day roughly an hour after the
+        worker process recycles. My initial page loads are down to around 10-15 seconds now.</p>
 
-<p>So, thank you to <a
-        href="http://www.jasonsamuel.com/2009/04/02/sharepoint-warmup-tool-speed-up-your-sharepoint-loading-time/">Jason
-    Samuel</a> for tipping me off to SPWakeUp.</p>
+    <p>So, thank you to <a
+            href="http://www.jasonsamuel.com/2009/04/02/sharepoint-warmup-tool-speed-up-your-sharepoint-loading-time/">Jason
+        Samuel</a> for tipping me off to SPWakeUp.</p>
 
-<p>If anyone has any other performance improvement tips, let me know.</p>
+    <p>If anyone has any other performance improvement tips, let me know.</p>
+</article>
 </body>
 </html>
