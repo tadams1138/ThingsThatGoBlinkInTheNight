@@ -8,57 +8,59 @@
 </head>
 <body onload="LoadTOC('../../toc.txt')">
 <div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
-<h1>Credit Card Masking and Regular Expression in .Net</h1>
-<p>Well contrary to what I would have thought, <a href="https://www.bing.com">bing.com</a> does not serve up any ready
-    to use CC masking examples for VB.Net. I would have settled for C#. No luck. So I had to do some digging. I thought
-    I'd lay this out there just so the next person with my exact problem doesn't have to look so long.</p>
+<article>
+    <h1>Credit Card Masking and Regular Expression in .Net</h1>
+    <p>Well contrary to what I would have thought, <a href="https://www.bing.com">bing.com</a> does not serve up any
+        ready to use CC masking examples for VB.Net. I would have settled for C#. No luck. So I had to do some digging.
+        I thought I'd lay this out there just so the next person with my exact problem doesn't have to look so long.</p>
 
-<p>Step #1) Find a credit card number within a string.</p>
+    <p>Step #1) Find a credit card number within a string.</p>
 
-<p>No you may find lots of examples on how to find them precisely, but I’m willing to forgo a giant mess of regular
-    expressions for a simpler one inspired by something I found at <a
-            href="http://stackoverflow.com/questions/1374482/c-find-replace-credit-cards-in-xml-string">StackOverflow:</a>
-</p>
+    <p>No you may find lots of examples on how to find them precisely, but I’m willing to forgo a giant mess of regular
+        expressions for a simpler one inspired by something I found at <a
+                href="http://stackoverflow.com/questions/1374482/c-find-replace-credit-cards-in-xml-string">StackOverflow:</a>
+    </p>
 
-<p><code class="vb">"(\d[\s|-]?){12,15}\d"</code></p>
+    <p><code class="vb">"(\d[\s|-]?){12,15}\d"</code></p>
 
-<p>The idea here is that we want to find 13 to 16 digits in a row separated by nothing except a single space or dash,
-    and those are optional. This regular expression will return a positive result for 2134-5678-9090-1212 as well as
-    12345678 9090-1 and 1 2 3 4 5 6-7-8-909012. While the last two clearly aren't formatted as we expect a credit card
-    number to be formatted, I'm willing risk that some non-credit card numbers may be accidentally masked. The
-    likelihood that my project will encounter such a combination of numbers that is not a credit card is negligible, and
-    my algorithm needs to be efficient. You of course may need to be more specific, but I have be willing to sacrifice
-    some minor precision for speed.</p>
+    <p>The idea here is that we want to find 13 to 16 digits in a row separated by nothing except a single space or
+        dash, and those are optional. This regular expression will return a positive result for 2134-5678-9090-1212 as
+        well as 12345678 9090-1 and 1 2 3 4 5 6-7-8-909012. While the last two clearly aren't formatted as we expect a
+        credit card number to be formatted, I'm willing risk that some non-credit card numbers may be accidentally
+        masked. The likelihood that my project will encounter such a combination of numbers that is not a credit card is
+        negligible, and my algorithm needs to be efficient. You of course may need to be more specific, but I have be
+        willing to sacrifice some minor precision for speed.</p>
 
-<p>My initial attempts to run the replace went something like this:</p>
+    <p>My initial attempts to run the replace went something like this:</p>
 
-<pre class="vb"><code>Imports System.Text.RegularExpressions
+    <pre class="vb"><code>Imports System.Text.RegularExpressions
 ...
 Public Function MaskCC(ByVal s As String) As String
   Return Regex.Replace(s, "(\d[\s|-]?){12,15}\d", "****************")
 End Function</code></pre>
 
-<p><code class="vb">MaskCC("you gave me 1234 5678 9090 1212 as your CC number")</code> returns<br>
-    <samp>"you gave me **************** as your CC number"</samp></p>
+    <p><code class="vb">MaskCC("you gave me 1234 5678 9090 1212 as your CC number")</code> returns<br>
+        <samp>"you gave me **************** as your CC number"</samp></p>
 
-<p>After some thought, I changed the requirements to display the last 4 digits so that we could still search in our data
-    for CC transactions. So I modified it like this:</p>
+    <p>After some thought, I changed the requirements to display the last 4 digits so that we could still search in our
+        data for CC transactions. So I modified it like this:</p>
 
-<pre class="vb"><code>Public Function MaskCC(ByVal s As String) As String
+    <pre class="vb"><code>Public Function MaskCC(ByVal s As String) As String
   Return Regex.Replace(s, "(\d[\s|-]?){9,12}((\d[\s|-]?){3}\d)", "************$2")
 End Function</code></pre>
 
-<p><code class="vb">MaskCC("you gave me 1234 5678 9090 1212 as your CC number")</code> returns
-    <samp>"you gave me ************1212 as your CC number"</samp></p>
+    <p><code class="vb">MaskCC("you gave me 1234 5678 9090 1212 as your CC number")</code> returns
+        <samp>"you gave me ************1212 as your CC number"</samp></p>
 
-<p>But then I was not satisfied since I couldn't distinguish between Amex and MC or Visa transactions. Amex cards only
-    use fifteen numbers and I was adding 12 asterisks to the last four digits. In additional to not being able to
-    distinguish those, debugging that oh-so-unlikely case where I mask a number not actually a CC number would be near
-    impossible to notice. So I decided that I needed to mask only digits, and I wanted to do it precisely. So after some
-    hunting I found some inspiration on <a href="http://dotnetperls.com/regex-replace-matchevaluator-vbnet">dotnetperls.com</a>.
-    Here is what I came up with:</p>
+    <p>But then I was not satisfied since I couldn't distinguish between Amex and MC or Visa transactions. Amex cards
+        only use fifteen numbers and I was adding 12 asterisks to the last four digits. In additional to not being able
+        to distinguish those, debugging that oh-so-unlikely case where I mask a number not actually a CC number would be
+        near impossible to notice. So I decided that I needed to mask only digits, and I wanted to do it precisely. So
+        after some hunting I found some inspiration on <a
+                href="http://dotnetperls.com/regex-replace-matchevaluator-vbnet">dotnetperls.com</a>. Here is what I
+        came up with:</p>
 
-<pre class="vb"><code>Public Function MaskCC(ByVal s As String) As String
+    <pre class="vb"><code>Public Function MaskCC(ByVal s As String) As String
   Return Regex.Replace(s, "(\d[\s|-]?){12,15}\d", New MatchEvaluator(AddressOf MaskCCMatch))
 End Function
 
@@ -67,11 +69,12 @@ Private Function MaskCCMatch(ByVal match As Match) As String
   Return Regex.Replace(CCnumber.Substring(0, CCnumber.Length - 4), "\d", "*") & CCnumber.Substring(CCnumber.Length - 4)
 End Function</code></pre>
 
-<p><code class="vb">MaskCC("you gave me 1234 5678 9090 1212 as your CC number")</code> returns
-    <samp>"you gave me **** **** **** 1212 as your CC number"</samp></p>
+    <p><code class="vb">MaskCC("you gave me 1234 5678 9090 1212 as your CC number")</code> returns <samp>"you gave me
+        **** **** **** 1212 as your CC number"</samp></p>
 
-<p>Now I just need to benchmark how efficient it is now that I'm creating a MatchEvaluator class. Perhaps I should only
-    initiate the MatchEvaluator once? How should I specify what character to mask with? Whatever I do, it must be thread
-    safe. I guess that is something I can return to when I have more time.</p>
+    <p>Now I just need to benchmark how efficient it is now that I'm creating a MatchEvaluator class. Perhaps I should
+        only initiate the MatchEvaluator once? How should I specify what character to mask with? Whatever I do, it must
+        be thread safe. I guess that is something I can return to when I have more time.</p>
+</article>
 </body>
 </html>

@@ -8,39 +8,42 @@
 </head>
 <body onload="LoadTOC('../../toc.txt')">
 <div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
-<h1>Change Passwords in Sharepoint without using Forms Authentication</h1>
-<p>When we initially built the server, we went with Windows Authentication partly because we didn't know better, but
-    also because we don't want to complicate the situation with more complicated kinds of authentication. There is one
-    major drawback to the Windows Authentication method: changing a user account password required them to log onto the
-    <a href="http://technet.microsoft.com/en-us/library/cc706993(WS.10).aspx">Windows Server 2003</a> box -- by which I
-    mean the regular Windows desktop -- go to Control Panel and do all those steps that you would do to change the
-    Windows password on your personal machine. This is kind of a pain since I don't want to know other people's
-    passwords when they ask me to type it for them nor I don't want to enable Remote Desktop or other VNC-like
-    applications on this server.</p>
+<article>
+    <h1>Change Passwords in Sharepoint without using Forms Authentication</h1>
+    <p>When we initially built the server, we went with Windows Authentication partly because we didn't know better, but
+        also because we don't want to complicate the situation with more complicated kinds of authentication. There is
+        one major drawback to the Windows Authentication method: changing a user account password required them to log
+        onto the <a href="http://technet.microsoft.com/en-us/library/cc706993(WS.10).aspx">Windows Server 2003</a> box
+        -- by which I mean the regular Windows desktop -- go to Control Panel and do all those steps that you would do
+        to change the Windows password on your personal machine. This is kind of a pain since I don't want to know other
+        people's passwords when they ask me to type it for them nor I don't want to enable Remote Desktop or other
+        VNC-like applications on this server.</p>
 
-<p>I had a developer do some research for me on what it would take to enable our users to change their password on our
-    <a href="http://www.microsoft.com/project/en/us/project-2007-server.aspx">Project Server 2007</a> box. According to
-    their extensive research, we needed to switch to Forms Authentication, and it was kind of a difficult process to
-    switch from Windows Authentication to Forms Authentication. We only have a small team of developers, and none of us
-    are Sharepoint experts. We had to throw this problem on the back burner since we just didn't have the time or the
-    resources to dedicate to this problem.</p>
+    <p>I had a developer do some research for me on what it would take to enable our users to change their password on
+        our <a href="http://www.microsoft.com/project/en/us/project-2007-server.aspx">Project Server 2007</a> box.
+        According to their extensive research, we needed to switch to Forms Authentication, and it was kind of a
+        difficult process to switch from Windows Authentication to Forms Authentication. We only have a small team of
+        developers, and none of us are Sharepoint experts. We had to throw this problem on the back burner since we just
+        didn't have the time or the resources to dedicate to this problem.</p>
 
-<p>But lucky for me, a little bing-ing (what do you call it when you search the web using <a href="http://bing.com/">bing.com</a>?)
-    later, I found a solution! There are a few Web Parts you can buy <a
+    <p>But lucky for me, a little bing-ing (what do you call it when you search the web using <a
+            href="http://bing.com/">bing.com</a>?) later, I found a solution! There are a few Web Parts you can buy <a
             href="http://www.sharepointboost.com/passwordchange.html">here</a> and <a
             href="http://store.bamboosolutions.com/sharepoint-password-change-web-part.aspx">here</a>, but if you don't
-    want to spend close to a thousand dollars for a solution (which I don't), you can find a free Web Part, <a
-            href="http://changepassword.codeplex.com/">ITaCS Change Password web part</a>. Go download this tool, run
-    the installer from your Sharepoint server and just follow the instructions available for download as a PDF on the
-    same site you downloaded the installer.</p>
+        want to spend close to a thousand dollars for a solution (which I don't), you can find a free Web Part, <a
+                href="http://changepassword.codeplex.com/">ITaCS Change Password web part</a>. Go download this tool,
+        run the installer from your Sharepoint server and just follow the instructions available for download as a PDF
+        on the same site you downloaded the installer.</p>
 
-<p>There is one step the instructions leave out though for those of us who are not Sharepoint-literate. In order for you
-    to see the Change Password form, you must pick the page you want the Change Password Web Part to appear on, click
-    the Site Actions button in the upper right corner, click Edit Page, click on whatever “Add a Web Part” button you
-    want, scroll down the popup that appears and check the ITaCS Change Password item, then click Add. At this point you
-    can pick up where their documentation tells you to click the “tool pane” link. When you are all done, configuring
-    the Web Part, you need to click “Exit Edit Mode” in the upper right corner, and you are all done.</p>
+    <p>There is one step the instructions leave out though for those of us who are not Sharepoint-literate. In order for
+        you to see the Change Password form, you must pick the page you want the Change Password Web Part to appear on,
+        click the Site Actions button in the upper right corner, click Edit Page, click on whatever “Add a Web Part”
+        button you want, scroll down the popup that appears and check the ITaCS Change Password item, then click Add. At
+        this point you can pick up where their documentation tells you to click the “tool pane” link. When you are all
+        done, configuring the Web Part, you need to click “Exit Edit Mode” in the upper right corner, and you are all
+        done.</p>
 
-<p>Now we can change our passwords without sitting in front of the server. Hurray!</p>
+    <p>Now we can change our passwords without sitting in front of the server. Hurray!</p>
+</article>
 </body>
 </html>
