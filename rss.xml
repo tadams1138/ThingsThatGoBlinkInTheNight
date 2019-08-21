@@ -5,6 +5,11 @@
     <link>https://www.tandisoft.com</link>
     <description>A blog for Tom Adams tech ramblings</description>
     <item>
+      <title>The Ruminant Pattern</title>
+      <link>https://www.tandisoft.com/2019/06/2019-06-19.html</link>
+      <description>The Ruminant Pattern</description>
+    </item>
+    <item>
       <title>Obfuscating with Dotfuscator</title>
       <link>https://www.tandisoft.com/2011/08/2011-08-23.html</link>
       <description>Obfuscating with Dotfuscator</description>
@@ -23,11 +28,6 @@
       <title>"Unable to generate wrapper classes since no InteropForms were found."</title>
       <link>https://www.tandisoft.com/2011/07/2011-07-20.html</link>
       <description>"Unable to generate wrapper classes since no InteropForms were found."</description>
-    </item>
-    <item>
-      <title>Change Passwords in Sharepoint without using Forms Authentication</title>
-      <link>https://www.tandisoft.com/2011/06/2011-06-03.html</link>
-      <description>Change Passwords in Sharepoint without using Forms Authentication</description>
     </item>
   </channel>
 </rss>
