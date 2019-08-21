@@ -5,6 +5,14 @@ body {
     padding-right: 300px;
 }
 
+img {
+    display: block;
+    max-width: 80%;
+    max-height: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 a:link {
     color: #d1bc62;
 }
@@ -29,4 +37,9 @@ h1 {
     position:fixed;
     right: 0;
     width: 300px;
+}
+
+.caption {
+    text-align: center;
+    font-style: italic;
 }
