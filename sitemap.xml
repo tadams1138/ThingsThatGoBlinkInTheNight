@@ -48,4 +48,8 @@
       <loc>https://www.tandisoft.com/index.html</loc>
       <changefreq>weekly</changefreq>
    </url>
+   <url>
+      <loc>https://www.tandisoft.com/2018/05/2018-05-31.html</loc>
+      <changefreq>never</changefreq>
+   </url>
 </urlset>

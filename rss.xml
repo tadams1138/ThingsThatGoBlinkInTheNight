@@ -10,6 +10,11 @@
       <description>The Ruminant Pattern</description>
     </item>
     <item>
+      <title>Rule Set Designer</title>
+      <link>https://www.tandisoft.com/2018/05/2018-05-31.html</link>
+      <description>Rule Set Designer</description>
+    </item>
+    <item>
       <title>Obfuscating with Dotfuscator</title>
       <link>https://www.tandisoft.com/2011/08/2011-08-23.html</link>
       <description>Obfuscating with Dotfuscator</description>
@@ -23,11 +28,6 @@
       <title>Improving Project Server 2007 Performance</title>
       <link>https://www.tandisoft.com/2011/07/2011-07-22.html</link>
       <description>Improving Project Server 2007 Performance</description>
-    </item>
-    <item>
-      <title>"Unable to generate wrapper classes since no InteropForms were found."</title>
-      <link>https://www.tandisoft.com/2011/07/2011-07-20.html</link>
-      <description>"Unable to generate wrapper classes since no InteropForms were found."</description>
     </item>
   </channel>
 </rss>
