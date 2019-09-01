@@ -15,6 +15,11 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
+      <title>The dependencies for the object cannot be determined</title>
+      <link>https://www.tandisoft.com/2011/09/2011-09-09.html</link>
+      <description>The dependencies for the object cannot be determined</description>
+    </item>
+    <item>
       <title>Building Visual Studio setup projects with TeamCity</title>
       <link>https://www.tandisoft.com/2011/08/2011-08-26.html</link>
       <description>Building Visual Studio setup projects with TeamCity</description>
@@ -23,11 +28,6 @@
       <title>TeamCity, Dotfuscator and those map files</title>
       <link>https://www.tandisoft.com/2011/08/2011-08-23T15:18.html</link>
       <description>TeamCity, Dotfuscator and those map files</description>
-    </item>
-    <item>
-      <title>Obfuscating with Dotfuscator</title>
-      <link>https://www.tandisoft.com/2011/08/2011-08-23T11:06.html</link>
-      <description>Obfuscating with Dotfuscator</description>
     </item>
   </channel>
 </rss>
