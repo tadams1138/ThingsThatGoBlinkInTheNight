@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Building Visual Studio setup projects with TeamCity</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Building Visual Studio setup projects with TeamCity</h1>
+    </header>
+
+    <p>TeamCity can build my C# and VB.Net projects using MSBuild just fine. But as of right now, there are no build
+        runners supplied that will build the standard Visual Studio setup projects (.vdproj). One option is to use a
+        Command Line build runner and have it shell devenv.com (which I found in the Visual Studio 10.0\Common7\IDE
+        folder on my system).</p>
+
+    <p>So I tried running the command line build runner to call devenv.com and pass it the necessary build arguments.
+        This built the entire solution including the installer packages, but it did not let me know when there was a
+        failure since it wasn’t parsing the output. You could add some redundancy by running the MSBuild or Visual
+        Studio build runners prior to the Command Line build runner to let you know when someone’s code won’t compile,
+        but that’s redundant and a giant waste of CPU.</p>
+
+    <p>Luckily for me I stumbled upon this post by Wolfgang Kleinschmit (awesome name) <a
+            href="http://youtrack.jetbrains.net/issue/TW-5385">http://youtrack.jetbrains.net/issue/TW-5385</a>. He
+        posted some C# code that would shell and parse devenv.com’s output so that TeamCity could understand when a
+        build failed.</p>
+
+    <p>I modified Wolfgang’s work slightly to include a few more features:</p>
+
+    <ul>
+        <li>Flags solution compilation failures as well as more errors and warnings.</li>
+
+        <li>Passes all command line arguments straight to devenv.com</li>
+    </ul>
+
+    <p>Just compile the following code to create your very own devenvbuildrunner.exe</p>
+
+    <pre class="csharp"><code>// Based on code sample found at http://youtrack.jetbrains.net/issue/TW-5385
+// By Wolfgang Kleinschmit
+// on 07 Aug 2009 23:26
+// This tool intercepts and modifies the standard output from devenv.com so that TeamCity can parse the lines as
+// warnings, errors or failues.
+
+// Modified by Tom Adams 2011-08-20
+// Modifications include:
+// Flags solution compilation failures as well as more errors and warnings.
+// Passes all commandline arguments straight to devenv.com  (ie any command line arguments you send to this app will be
+// sent to devenv.com).
+
+// To use this application, just copy it to the same folder as devenv.com and call it with whatever arguments you might
+// have passed to devenv.com
+
+// Standard disclaimer: This code is provided free of charge with NO WARRENTY of any Kind.
+// USE AT YOUR OWN RISK !!
+//
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+
+namespace devenvbuildrunner
+{
+    class Program
+    {
+        static Regex rxSlnHeader = new Regex(
+            @"Microsoft Visual Studio Solution File, Format Version (?&lt;VERSION&gt;[0-9]+)\.",
+            RegexOptions.Compiled);
+
+        static int Main(string[] args)
+        {
+            string pattern = string.Format("^[\"]?({0})[\"]?\\s*", Environment.GetCommandLineArgs()[0].Replace(@"\", @"\\"));
+            string replacement = "";
+            Regex rgx = new Regex(pattern);
+            string argumentsOnly = rgx.Replace(Environment.CommandLine, replacement);
+
+            ProcessStartInfo psi = new ProcessStartInfo("devenv.com");
+            psi.Arguments = argumentsOnly;
+            psi.CreateNoWindow = true;
+            psi.ErrorDialog = false;
+            psi.RedirectStandardError = true;
+            psi.RedirectStandardOutput = true;
+            psi.UseShellExecute = false;
+
+            Process P = Process.Start(psi);
+
+            Thread StdOReader = new Thread(new ParameterizedThreadStart(ReadStd));
+            StdOReader.Start(P.StandardOutput);
+            Thread StdEReader = new Thread(new ParameterizedThreadStart(ReadStd));
+            StdEReader.Start(P.StandardError);
+
+            P.WaitForExit();
+
+            StdOReader.Join();
+            StdEReader.Join();
+
+            foreach (int key in flows.Keys)
+            {
+                List&lt;string&gt; lines = flows[key];
+
+                foreach (string tcLine in lines)
+                    Console.Out.WriteLine(tcLine);
+                Console.Out.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++");
+            }
+            Console.Out.Flush();
+            return P.ExitCode;
+        }
+
+        private static void ReadStd(Object obj)
+        {
+            TextReader R = obj as TextReader;
+            string line = null;
+            while ((line = R.ReadLine()) != null)
+                ProcessLine(line);
+        }
+
+        static Regex rxPrefix = new Regex(
+            @"^(?&lt;NR&gt;[0-9]+)&gt;",
+            RegexOptions.Compiled);
+
+        static Regex rxMessage = new Regex(
+            @": (error|warning) [A-Z]+[0-9]+:",
+            RegexOptions.Compiled);
+
+        static Regex rxMessage2 = new Regex(
+            @"(ERROR|WARNING):",
+            RegexOptions.Compiled);
+
+        static Regex rxMessage3 = new Regex(
+            @"[1-9]{1}[0-9]* failed",
+            RegexOptions.Compiled);
+
+        static Regex rxFirstLine = new Regex(
+            @"------ Build started: (?&lt;MSG&gt;Project: [^,]+, Configuration: [^-]+)------",
+            RegexOptions.Compiled);
+
+        private static Dictionary&lt;int, List&lt;string&gt;&gt; flows = new Dictionary&lt;int, List&lt;string&gt;&gt;();
+
+        private static void ProcessLine(string line)
+        {
+            int flowID = 0;
+            Match M;
+
+            M = rxPrefix.Match(line);
+            if (M != Match.Empty)
+            {
+                flowID = Int32.Parse(M.Groups["NR"].Value);
+                line = line.Substring(M.Groups["NR"].Length + 1);
+            }
+
+            string status = "NORMAL";
+            M = rxMessage.Match(line);
+            if (M != Match.Empty)
+            {
+                status = M.Groups[1].Value.ToUpper();
+            }
+            M = rxMessage2.Match(line);
+            if (M != Match.Empty)
+            {
+                status = M.Groups[1].Value;
+            }
+            M = rxMessage3.Match(line);
+            if (M != Match.Empty)
+            {
+                status = "FAILURE";
+            }
+
+            M = rxFirstLine.Match(line);
+            if (M != Match.Empty)
+            {
+                Console.Out.WriteLine("##teamcity[progressMessage '{0}']", QuoteLine(M.Groups["MSG"].Value));
+            }
+
+            line = QuoteLine(line);
+
+            if (!flows.ContainsKey(flowID))
+                flows[flowID] = new List&lt;string&gt;();
+
+            string fmtLine = String.Format(
+                "##teamcity[message status='{2}' errorDetails='' text='[{0:000}|] {1}']",
+                flowID, line, status);
+
+            Console.Out.WriteLine(fmtLine);
+            Console.Out.Flush();
+            flows[flowID].Add(fmtLine);
+        }
+
+        private static string QuoteLine(string line)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in line)
+            {
+                if ("'\n\r|]".IndexOf(c) != -1) sb.Append('|');
+                sb.Append(c);
+            }
+            line = sb.ToString();
+            return line;
+        }
+    }
+}</code></pre>
+
+    <p>After you compile this code, copy the resulting assembly to the same folder as devenv.com. Next, use a Command
+        Line build runner in TeamCity to call this executable instead of devenv.com. Pass it all the necessary command
+        line arguments like:</p>
+
+    <sample>Devenvbuildrunner.exe mysolution.sln /build “Release|Any CPU”</sample>
+
+    <p>Type devenv.com /? For a full list of command line options you could be using.</p>
+
+    <p>Also, read <a href="http://msdn.microsoft.com/en-us/library/az24scfc.aspx#grouping_constructs">http://msdn.microsoft.com/en-us/library/az24scfc.aspx#grouping_constructs</a>
+        for information on how to use regular expressions in case you are interested in adding to or modifying some of
+        the regex code in my above sample. I added rxMessage2 and rxMessage3 to help find more errors. If you see
+        anything in the devenv.com output you think TeamCity should know about, go ahead and modify the code. Also,
+        please drop me a comment so I can include your changes in my code too.</p>
+
+    <p>Good luck!</p>
+</article>
+</body>
+</html>
