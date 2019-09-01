@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TeamCity, Dotfuscator and those map files</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>TeamCity, Dotfuscator and those map files</h1>
+    </header>
+
+    <p>If you’re like me, and I know I am, you are asking yourself “What is the best way to keep track of your
+        obfuscation map files?”</p>
+
+    <p>We have an SVN server connected to a TeamCity build server. Every time someone makes a change in the code and
+        commits it to the SVN server, the TeamCity server attempts to make a build from the code. During the build
+        process, the resulting .Net assemblies are obfuscated and encrypted with our copy of Dotfuscator from Preemptive
+        (<a href="http://www.preemptive.com">http://www.preemptive.com</a>).</p>
+
+    <p>The obfuscation process produces an xml document, map.xml, which is necessary to de-obfuscate a stack trace among
+        other things. We need these map files. We need a history of these map files so that they are consistent. You
+        don’t want function “StartServer()” to get renamed to “a()” one day and renamed to “b()” then next. How in the
+        world will you know what the stack trace could possibly mean from one build to the next? Dotfuscator allows you
+        to use the old map file as a reference point for any new map file, so that you will always be able to
+        de-obfuscate your code without the headache of wondering which version of the software this stack trace might
+        refer to.</p>
+
+    <p>Not only do we want to take advantage of this feature in Dotfuscator, we still want to keep a running history of
+        these map files to prevent mistakes made (someone deletes the map file, etc). Dotfuscator is smart about this
+        process to. You may specify the exact same name for both the old and new map files, and it will rename the old
+        map file to map.0.xml for instance and save the new one as map.xml. If you obfuscate your assembly again, it
+        will rename the last map.xml to map.1.xml and save a new map file as map.xml. This way the most recent map file
+        is always map.xml, the second most recent is map.largest-integer.xml, and the oldest is map.0.xml.</p>
+
+    <p>Here is my problem: TeamCity checks out a “working copy” from the SVN. I wanted to script it so that the new map
+        file produced (map.xml) would be committed to the SVN server. Then when it came time for TeamCity to build
+        again, it could check the map.xml file out and not worry about not having the right copy. What if I had to
+        delete the “working copy” from the build server because of some glitch? Should I lose my most recent map file in
+        the process? Alas, you cannot commit a file to the SVN server if it is in a mere “working copy” and not a
+        “checkout” from the SVN.</p>
+
+    <p>I thought about trying to change TeamCity’s settings from downloading a working copy to checking out the code… I
+        don’t know how, and I’m not even convinced that’s a good idea.</p>
+
+    <p>I thought about trying to find a round-about way to copy the map files to the SVN, perhaps by copying them to a
+        fully checked out folder? Sounds like way too much work and probably error prone.</p>
+
+    <p>Eventually I settled on an idea that seems to work for us: I included this build script in the post-build event
+        for any of our projects to be obfuscated when they are compiled on the build server (numbered only so I can
+        refer the lines below):</p>
+
+    <pre><code>1. IF $(ConfigurationName) == Release (
+2.    IF EXIST "$(dotfuscator)" (
+3.        IF NOT EXIST "$(ObfuscationMapFolder)\$(ProjectName)" md "$(ObfuscationMapFolder)\$(ProjectName)"
+4.        IF NOT EXIST "$(ObfuscationMapFolder)\$(ProjectName)\map.xml" copy "$(ObfuscationMapFolder)\map.xml" "$(ObfuscationMapFolder)\$(ProjectName)"
+5.        "$(dotfuscator)" /in:"$(TargetPath)" /out:"$(TargetDir)Obfuscated" /honor:on /strip:on /prune:off /enhancedOI:on /suppress:on /mapin:"$(ObfuscationMapFolder)\$(ProjectName)\map.xml" /mapout:"$(ObfuscationMapFolder)\$(ProjectName)\map.xml" /debug:pdb
+6.        copy /Y "$(TargetDir)Obfuscated\$(TargetFileName)" "$(TargetPath)"
+7.        rmdir /S /Q "$(TargetDir)Obfuscated"
+8.    )
+9. )
+</code></pre>
+
+    <p>Line 1 is used to skip obfuscation if we are not using the release configuration so we don’t waste time when we
+        produce debug assemblies.</p>
+
+    <p>Line 2 is used to skip this whole process if you don’t have Dotfuscator installed. You see I have “dotfuscator”
+        as an environment variable assigned a path to the dotfusctator executable. If you don’t have that variable set
+        in your environment, this script assumes you don’t have Dotfuscator installed (note: I created this environment
+        variable manually), and skips the rest of the script.</p>
+
+    <p>Line 3 checks to see if there is a folder on the system (my build system) that exists at
+        %ObfuscationMapFolder%\$(ProjectName). If there isn’t, it creates this folder. ObfuscationMapFolder, like
+        “dotfuscator” is an environment variable I created. It points to a specific folder on my server. This folder is
+        shared over the network with read only access. Any of the developers on my team can read (but not write to) all
+        of the contents of this folder and its subfolders.</p>
+
+    <p>Line 4 copies an empty template map file to the project folder if no map file exists there yet. The reason for
+        this is Dotfuscator will fail if you specify an old map file to use and it cannot find it. It also must be a
+        valid map file. The file I copy contains this:</p>
+
+    <pre class="xml"><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;!DOCTYPE dotfuscatorMap SYSTEM "http://www.preemptive.com/dotfuscator/dtd/dotfuscatorMap_v1.1.dtd"&gt;
+&lt;dotfuscatorMap version="1.1"&gt;
+    &lt;header&gt;
+        &lt;timestamp&gt;2010-09-30T19:07:23&lt;/timestamp&gt;
+        &lt;product version="4.8.1000.25803" user="John Doe" serial="1234-5678-9101"&gt;Dotfuscator Professional Edition&lt;/product&gt;
+    &lt;/header&gt;
+    &lt;mapping /&gt;
+    &lt;statistics /&gt;
+&lt;/dotfuscatorMap&gt;
+</code></pre>
+
+    <p>In line 5 I actually call the Dotfuscator (using the environment variable “dotfuscator” pointing to the
+        Dotfuscator executable). I specify all of my default options especially the location of the old map file and the
+        location I want it to write a new map file.</p>
+
+    <p>In line 6 and 7 I copy the newly created obfuscated assembly over the old un-obfuscated assembly and delete the
+        unnecessary “Obfuscated” folder created during the obfuscation process.</p>
+
+    <p>So now I have an easily accessible folder of map files for anyone on my dev team who needs to use Lucidator to
+        decipher a stack trace. I also have a history of all of my map files by project. In addition to that I include
+        that shared folder in my server’s regular backup process so I have redundancy in my backups.</p>
+
+    <p>This solution is not as convenient as everyone being able to update their SVN checkouts to get the latest map
+        files on their system, but it’s the best I could come up with. And it seems to be working just fine now.</p>
+</article>
+</body>
+</html>
