@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How to fix a .resx file that won’t compile for .Net 3.5</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>How to fix a .resx file that won’t compile for .Net 3.5</h1>
+    </header>
+
+    <p>According to a <a
+            href="http://connect.microsoft.com/VisualStudio/feedback/details/554759/error-in-control-resx-file-when-adding-imagelist">thread
+        on Microsoft’s site</a>, there is a problem compiling some .resx files in .Net 3.5 projects with Visual Studio
+        2010 and for x86 processors.</p>
+
+    <p>The compile error may look like :</p>
+
+    <table>
+        <tr>
+            <th></th>
+            <th></th>
+            <th>Description</th>
+            <th>File</th>
+            <th>Line</th>
+            <th>Column</th>
+            <th>Project</th>
+        </tr>
+        <tr>
+            <td>Error</td>
+            <td>1</td>
+            <td>Could not load file or assembly 'file:///C:/xyz.dll' or one of its dependencies. An attempt was made to
+                load a program with an incorrect format. Line 1974, position 5.
+            </td>
+            <td>C:\Form1.resx</td>
+            <td>1974</td>
+            <td>5</td>
+            <td>XYZ</td>
+        </tr>
+    </table>
+
+    <p>The line and column refer to the close of the data tag for an ImageStream data value.</p>
+
+    <pre><code>&lt;data name="ilsButtons.ImageStream" mimetype="application/x-microsoft.net.object.binary.base64"&gt;
+    &lt;value&gt;
+        AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj00LjAuMC4w
+        LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPWI3N2E1YzU2MTkzNGUwODkFAQAAACZTeXN0
+        BlahBlahBlahBlahBlah…
+
+        Ad8BvwG6Af8BygG8AbYB/wHEAcABuwH/AcEBwgG+Af8BQgFNAT4HAAE+AwABKAMAAWgBAQIAAUIDAAEB
+        AQABAQUAAWABDBYAA///AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wBtAAs=
+    &lt;/value&gt;
+&lt;/data&gt;</code></pre>
+
+    <p>The solutions offered up have included compiling for AnyCPU instead of for x86. I cannot compile this form for
+        AnyCPU since it contains an ActiveX control that will not run on a 64bit machine if compiled for AnyCPU.</p>
+
+    <p>There is also a suggestion to upgrade the projects to .Net 4.0. If that is a less than desirable outcome for you,
+        and you just need a quick fix, the thread also includes a quick fix to the data in the .resx file. This fix will
+        have to be made every time the IDE modifies the .resx file (which is every time you open the form for graphical
+        editing in the IDE). Since this form is rarely being modified anymore, and all we are really working on is bug
+        fixes in other areas of the project, this solution seems more ideal for us than changing installation
+        requirements for the whole project.</p>
+
+    <p>The solution comes from Pellet21 on 2/24/2011. He says to edit the top line of the ImageStream value in the .resx
+        file. Change it from</p>
+
+    <sample>AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj0<span
+            style="background-color: red">0</span>LjAuMC4w
+    </sample>
+
+    <p>to</p>
+
+    <sample>AAEAAAD/////AQAAAAAAAAAMAgAAAFdTeXN0ZW0uV2luZG93cy5Gb3JtcywgVmVyc2lvbj0<span
+            style="background-color: red">y</span>LjAuMC4w
+    </sample>
+
+    <p>That’s simply changing the 9th character from the right from a zero to the lower case letter y. Once you make
+        that change, the project will compile. Just don’t open up the form for graphical editing in the IDE again…
+        unless you want to change that character again.</p>
+</article>
+</body>
+</html>
