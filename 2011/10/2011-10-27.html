@@ -183,5 +183,13 @@ Module Program
 End Module</code></pre>
 
 </article>
+
+<h2>Comments</h2>
+
+<p>Unknown April 8, 2014 at 1:57 AM<br>
+    Any idea on how to get vb6.exe to run as admin on Teamcity? I need to do this when compiling with binary compatibility.</p>
+
+<p>Whale Biologist - Tom Adams April 15, 2014 at 9:20 AM<br>
+    I don't recall off the top of my head, but you might try setting vb6.exe or the buildrunner to always use admin. Right click the executable in Explorer, click properties. Compatibility tab, Change Settings for all users, check Run the program as an Administrator. If that doesn't work for you there are ways to get your .net buildrunner to always start as admin. http://www.developerfusion.com/code/7987/making-a-net-app-run-on-vista-with-administrator-priviledges/ Remember to probably turn UAC off on your build machine.</p>
 </body>
 </html>
