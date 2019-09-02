@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Construct WCF Binding from string (XML)</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Construct WCF Binding from string (XML)</h1>
+    </header>
+
+    <p><a href="http://blogs.msdn.com/b/jimmytr/archive/2011/02/15/snippet-construct-wcf-binding-from-string-xml.aspx">Jimmy
+        Tønners Blog</a> has an excellent C# snippet on how to convert a bindingconfiguration xml fragment into a
+        Binding. I ported it to VB.Net, and turned it into a function which returns the resulting Binding element.</p>
+
+    <pre class="vb"><code>Imports System.Configuration
+Imports System.ServiceModel.Channels
+Imports System.ServiceModel.Configuration
+
+''' &lt;summary&gt;Contains methods related to &lt;see cref="Binding"&gt;Binding&lt;/see&gt; objects which
+''' contain all the binding elements that specify the protocols, transports, and message
+''' encoders used for communication between clients and services.&lt;/summary&gt;
+Public Class BindingTool
+
+    ''' &lt;summary&gt;Converts WCF binding definitions from XML, like the kind you see in an
+    ''' application's .config file, to a &lt;see cref="Binding"&gt;Binding&lt;/see&gt; object.
+    ''' &lt;/summary&gt;
+    ''' &lt;param name="customConfig"&gt;The XML defining the type of
+    ''' &lt;see cref="Binding"&gt;Binding&lt;/see&gt; to return.&lt;/param&gt;
+        ''' &lt;returns&gt;A &lt;see cref="Binding"&gt;Binding&lt;/see&gt; based on the XML supplied.&lt;/returns&gt;
+    ''' &lt;remarks&gt;Code example courtesy of Jimmy Tønners Blog
+    ''' 15 Feb 2011 11:41 AM
+    ''' http://blogs.msdn.com/b/jimmytr/archive/2011/02/15/snippet-construct-wcf-binding-from-string-xml.aspx
+    ''' &lt;/remarks&gt;
+    Shared Function BindingFromXML(customConfig As String) As Binding
+
+        Dim configSystem As System.Configuration.Configuration = _
+            ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None)
+        Dim bindingSection As BindingsSection = BindingsSection.GetSection(configSystem)
+        bindingSection.SectionInformation.SetRawXml( _
+            String.Format("&lt;bindings&gt;{0}&lt;/bindings&gt;", customConfig))
+        Dim bindingCollectionElement As BindingCollectionElement = Nothing
+        For Each b As BindingCollectionElement In bindingSection.BindingCollections
+            If 0 &lt; b.ConfiguredBindings.Count Then
+                bindingCollectionElement = b
+                Exit For
+            End If
+        Next
+        Dim newBinding As Binding = DirectCast( _
+            bindingCollectionElement.BindingType.Assembly.CreateInstance( _
+                bindingCollectionElement.BindingType.FullName), Binding)
+        Dim bEleEx As IBindingConfigurationElement = _
+            bindingCollectionElement.ConfiguredBindings(0)
+        bEleEx.ApplyConfiguration(newBinding)
+
+        Return newBinding
+    End Function
+
+End Class</code></pre>
+
+    <p>I researched the issue back when we were considering storing all WCF endpoint connection info as XML inside of
+        SQL records so that all 1000+ sites our app would connect to could theoretically have their own private
+        connection info.</p>
+
+    <p>We eventually dropped this idea in favor of storing the name of the endpoint connection definition in the SQL
+        record and keeping a limited number of endpoint connection definitions in the application’s configuration file.
+        A large part of that reason was that we couldn’t figure out how to turn the endpoint XML or the Behavior XML
+        into their respective objects without some poor hack idea like writing them to disk first and then loading them
+        up as an application configuration file.</p>
+
+    <p>So in the end we just pass the endpoint configuration name to the WCF client class constructor, and then reassign
+        the Endpoint Address with the URI of the client we want to connect to, but maintain whatever Identity or Address
+        Headers were defined in the application configuration. We also assign the username and password because you
+        can’t store those values in the application configuration file and with good reason probably.</p>
+
+    <pre class="vb"><code>        Dim configuration As String = GetConnectionConfigNameForClient()
+        Dim username As String = GetConnectionUsernameForClient()
+        Dim password As String = GetConnectionPasswordForClient()
+        serviceClient = New MediaServiceReference.MediaServiceClient(configuration)
+        serviceClient.Endpoint.Address = New EndpointAddress(remoteAddress, _
+                                        serviceClient.Endpoint.Address.Identity, _
+                                        serviceClient.Endpoint.Address.Headers)
+
+        serviceClient.ClientCredentials.UserName.UserName = username
+        serviceClient.ClientCredentials.UserName.Password = password</code></pre>
+
+    <p>Even though we solved it that way, I still like Jimmy Tønners solution, so I thought I’d share it.</p>
+
+</article>
+</body>
+</html>
