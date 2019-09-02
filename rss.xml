@@ -15,6 +15,11 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
+      <title>How to get a .Net service to restart itself</title>
+      <link>https://www.tandisoft.com/2012/01/2012-01-06.html</link>
+      <description>How to get a .Net service to restart itself</description>
+    </item>
+    <item>
       <title>Built a TeamCity makensis.exe output parser</title>
       <link>https://www.tandisoft.com/2011/11/2011-11-02.html</link>
       <description>Built a TeamCity makensis.exe output parser</description>
@@ -23,11 +28,6 @@
       <title>Built a TeamCity VB6.exe output parser</title>
       <link>https://www.tandisoft.com/2011/10/2011-10-27.html</link>
       <description>Built a TeamCity VB6.exe output parser</description>
-    </item>
-    <item>
-      <title>How to fix a .resx file that won’t compile for .Net 3.5</title>
-      <link>https://www.tandisoft.com/2011/10/2011-10-22.html</link>
-      <description>How to fix a .resx file that won’t compile for .Net 3.5</description>
     </item>
   </channel>
 </rss>

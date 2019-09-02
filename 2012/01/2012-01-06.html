@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How to get a .Net service to restart itself</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>How to get a .Net service to restart itself</h1>
+    </header>
+
+    <p>I had a few problems recently attempting to trigger a .Net service to restart itself especially if changes were made to its configuration file.  For a while I was hung up on the restart until I found a sample batch file command to pause in between stop and start calls at <a href="http://www.robvanderwoude.com/wait.php">http://www.robvanderwoude.com/wait.php</a>.</p>
+
+    <p>Here’s the sampleVB.Net code:</p>
+
+    <pre class="vb"><code>Imports System.Runtime.CompilerServices
+
+Public Module ServiceControllerExtension
+
+    &lt;Extension()&gt; _
+    Public Sub Restart(s As System.ServiceProcess.ServiceController)
+        Dim tempBatch As String = System.IO.Path.GetTempFileName()
+        System.IO.File.Move(tempBatch, tempBatch & ".bat")
+        tempBatch &= ".bat"
+        Using w As New System.IO.StreamWriter(tempBatch)
+            w.WriteLine("net stop """ & s.ServiceName & """")
+            w.WriteLine("REM The following line simply pauses for 3 seconds")
+            w.WriteLine("CHOICE /C:AB /T:3 /D:A > NUL") 'This line just pauses. 
+            'Somehow a lack of a pause prevents the service from starting up.
+            'w.WriteLine("ping localhost")  'alternate to above line
+            w.WriteLine("net start """ & s.ServiceName & """")
+            w.WriteLine("del /Q """ & tempBatch & """")
+        End Using
+        Process.Start(tempBatch)
+    End Sub 
+
+End Module</code></pre>
+
+    <p>Here is a sample of how to use it:</p>
+
+<pre class="vb"><code>Private Sub SomeMethod()
+    Dim x As New ServiceProcess.ServiceController("MyServiceName")
+    x.Restart()
+End Sub</code></pre>
+
+</article>
+</body>
+</html>
