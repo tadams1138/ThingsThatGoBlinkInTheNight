@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Some observations on building frameworks</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Some observations on building frameworks</h1>
+    </header>
+
+    <p>I've had to work with multiple company frameworks in my career containing code common to many of the company
+        apps. Each of these frameworks came with their own pros and cons. Here are just some observations I've made over
+        the last few years regarding writing frameworks.</p>
+
+    <h2>Frameworks</h2>
+    <h2>Purpose</h2>
+    <p>The purpose of an application framework is primarily make the process of application development easier and
+        secondarily to make application development consistent. As such, the following rules should be followed when
+        developing an application framework.</p>
+
+    <h2>Backwards compatibility</h2>
+    <p>Breaking changes forces existing application code to have to be altered and retested if the application is to
+        take advantage of the new framework, and so breaking backwards compatibility may be among the worst things you
+        can do.</p>
+
+    <h2>Extendibility</h2>
+    <p>A good framework does not force application development to find ways around it to meet their business needs. As
+        such, framework elements should be separated into their logical parts and related to each other primarily by
+        interfaces/contracts. This allows application developers to choose those parts of the framework that are most
+        useful to them, and ignore the rest without having to hack code to work around those parts they can’t use.</p>
+
+    <p>For example: Many apps may use some kind of shared login screen (actual example)</p>
+    <ol>
+        <li>One class should contain all the code necessary to validate a user name and password - what to do if the
+            login is invalid, what to do if the login is valid, etc.
+        </li>
+        <li>One completely separate class should contain the code necessary to access the database and return the
+            necessary information that the above code needs to function.
+        </li>
+        <li>One or more classes could be built to use the above code and display it on a web page, in a windows form or
+            WPF.
+        </li>
+    </ol>
+
+    <p>They could all relate to each other through abstract interfaces/contracts so that any logical part could be
+        swapped out by the application developer.</p>
+
+    <p>For instance, most of this company's apps use SQL server, but if a developer was tasked with working with Oracle,
+        there is no reason that code #1 and #3 in the framework shouldn’t still be usable. We should only have to write
+        some new code in the application to handle Oracle DBs, and connect it to the other two framework elements.</p>
+
+    <p>If we change business rules, like we should lock Windows if the login fails enough times, then we should ideally
+        still be able to use framework code #2 and #3 and only have to write new application code to handle new business
+        rules.</p>
+
+    <p>An application developer ideally should not have to wait for the framework to include these new changes for the
+        business rules or the Oracle connection. They should be able to implement the abstract interfaces/contracts
+        inside of their own projects and connect the framework code to their custom application work. The framework
+        project can then add new code at its own pace. This has the added benefit of adding “tried and true”
+        implementations to the framework as opposed to first attempt code (i.e. once the Oracle based app has gone live
+        and is shown to be a success, then you can add the Oracle database code to the framework for everyone else to
+        use).</p>
+
+    <h2>Minimal Dependencies</h2>
+    <p>Writing a framework is a balancing act. The above three classes may sound related to each other because they are
+        all login related, but each carries with it potentially several dependencies. For example, if I’m using SQL
+        server, I do not want to have to install Oracle drivers for my app to run just because I’m using the login
+        screen. For that reason, framework components should be broken out into separate libraries, grouped based on
+        common dependencies. It would be reasonable for instance to store classes for accessing an Oracle database for
+        the login screen or the dictionary screen (another real example) in the same Company.Framework.Data.Oracle.dll
+        library. It would also make sense to store the login screen UI code and the dictionary UI code in a library like
+        Company.Framework.GUI.WPF.dll.</p>
+
+    <h2>Company participation</h2>
+    <h3>Distribution</h3>
+    <p>There should be a centralized publishing location for the latest framework. I’d recommend using NuGet packages so
+        that every development team is up to date.</p>
+
+    <h3>Documentation</h3>
+    <p>A great framework is worthless if no one in the company knows anything about it, or worse if it takes more time
+        to learn the framework than if the developer had written his application without the framework. As such,
+        training and/or company-wide promotion of the framework is essential.</p>
+
+    <h4>Unit tests</h4>
+    <p>This might rub some people the wrong way, but that boiler plate XML based documentation usually does very little
+        for programmers. Fact: The first thing a programmer looks for when working with any API is a code example. Well
+        written unit tests combined with well named classes, methods and arguments do just that; they serve as an
+        example for what behavior to expect from a class. They also serve to protect the code by detecting unpredicted
+        behavior when code changes are made. I strongly recommend including unit test code in framework documentation,
+        more so than XML based documentation.</p>
+
+    <p>This recommendation does not detract in any way the role of software testers and QA.</p>
+
+    <h3>Participation</h3>
+    <p>There should be two way communication involved between the framework team and the framework users so that as
+        elements of the framework are expanded upon (e.g. someone extends the login screen to handle Oracle DBs), those
+        improvements can be reviewed and added into the framework.</p>
+
+    <h2>General all-purpose development rules</h2>
+    <h3>Follow coding standards</h3>
+    <p>Enforce those standards on code check-in so that basic coding standards does not become the job of the code
+        reviewer, but the job of the one writing the code in the first place.</p>
+
+    <h3>Continuous Integration Builds</h3>
+    <p>Every time a developer checks in code, all framework code should compile and all unit tests run. Just like the
+        coding standards, if the compile or the tests fail, the code should be rejected and the developer that checked
+        in the code should fix the problem.</p>
+
+    <p>Neither of these two rules negates the role of the code reviewer.</p>
+
+    <h2>Where to go from here if you have an existing mess of a framework</h2>
+    <h3>Add to the existing framework using the above guidelines</h3>
+    <p>In most of the instances I've encountered, I do not believe it is necessary to start from scratch on the legacy
+        code.</p>
+
+    <h3>Deprecate older elements as we go</h3>
+    <p>As a fix to a component like the login screen is made, the code could be moved to match the above requirements,
+        (i.e. separate out the DB, business rules, and GUI components into separate libraries), and the existing code
+        could be marked “<a href="http://msdn.microsoft.com/en-us/library/system.obsoleteattribute.aspx">Obsolete</a>”.
+        This will allow older applications to continue to run using the old code (i.e. we are <strong>not</strong>
+        breaking compatibility), and it notifies new application developers to use the new framework code.</p>
+
+    <h3>Do not isolate developers in the framework</h3>
+    <p>Make a developer sleep in the bed he made. They will write better framework code if they know how it is being
+        used. If at all possible, pool the “framework team” (if one is to exist) from many different projects expected
+        to use the framework, and make them only work on it part of the time.</p>
+
+    <p>Agreements? Disagreements? Thoughts? Please leave me a comment.</p>
+</article>
+</body>
+</html>
