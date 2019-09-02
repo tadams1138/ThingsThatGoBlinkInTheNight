@@ -15,6 +15,11 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
+      <title>xkcd The Browser released!</title>
+      <link>https://www.tandisoft.com/2013/05/2013-05-29.html</link>
+      <description>xkcd The Browser released!</description>
+    </item>
+    <item>
       <title>Some observations on building frameworks</title>
       <link>https://www.tandisoft.com/2013/03/2013-03-26.html</link>
       <description>Some observations on building frameworks</description>
@@ -23,11 +28,6 @@
       <title>Linking Setup project versions to TeamCity build numbers</title>
       <link>https://www.tandisoft.com/2012/04/2012-04-30T17:17.html</link>
       <description>Linking Setup project versions to TeamCity build numbers</description>
-    </item>
-    <item>
-      <title>Linking .Net software versions to repository versions using TeamCity</title>
-      <link>https://www.tandisoft.com/2012/04/2012-04-30T15:07.html</link>
-      <description>Linking .Net software versions to repository versions using TeamCity</description>
     </item>
   </channel>
 </rss>

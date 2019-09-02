@@ -21,7 +21,7 @@ cat > toc.txt << EOF
 <ul>
 EOF
 
-find . -name '*.html' | sort -r | while read fname; do
+find . -path ./p -prune -o -name '*.html' -print | sort -r | while read fname; do
     title="$(grep -P -o '(?<=<title>).*(?=</title>)' "$fname")"
     href="$siteRoot${fname:1}"
     html="<li><a href=$href>$title</a></li>"
