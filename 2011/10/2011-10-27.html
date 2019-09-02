@@ -37,7 +37,7 @@ Module Program
 
     Sub Main()
 
-        If My.Application.CommandLineArgs.Count > 0 Then
+        If My.Application.CommandLineArgs.Count &gt; 0 Then
             For i = 0 To My.Application.CommandLineArgs.Count - 1
                 Dim a As String = My.Application.CommandLineArgs(i)
 
@@ -170,7 +170,7 @@ Module Program
         Dim sb As New StringBuilder
 
         For Each c As Char In line
-            If ("'|]" & Environment.NewLine).IndexOf(c) <> -1 Then
+            If ("'|]" & Environment.NewLine).IndexOf(c) &lt;&gt; -1 Then
                 sb.Append("|"c)
             End If
             sb.Append(c)

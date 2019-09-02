@@ -69,7 +69,7 @@ Module Program
         Loop
     End Sub
     Public rxMessage As New Regex("!system: returned 1", RegexOptions.Compiled)
-    Public rxMessage2 As New Regex(" -> no files found.", RegexOptions.Compiled)
+    Public rxMessage2 As New Regex(" -&gt; no files found.", RegexOptions.Compiled)
     Public rxMessage3 As New Regex("aborting creation process", RegexOptions.Compiled)
     Public rxMessage4 As New Regex("Can't open script ", RegexOptions.Compiled)
     Public rxMessage5 As New Regex("Invalid command: ", RegexOptions.Compiled)
@@ -128,7 +128,7 @@ Module Program
         Dim sb As New StringBuilder
 
         For Each c As Char In line
-            If ("'|]" & Environment.NewLine).IndexOf(c) <> -1 Then
+            If ("'|]" & Environment.NewLine).IndexOf(c) &lt;&gt; -1 Then
                 sb.Append("|"c)
             End If
             sb.Append(c)
