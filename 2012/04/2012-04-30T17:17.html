@@ -13,7 +13,7 @@
         <h1>Linking Setup project versions to TeamCity build numbers</h1>
     </header>
 
-    <p>Following my previous goal of <a href="2012-04-30T15:07.html">linking the version numbers of our compiled files
+    <p>Following my previous goal of <a href="2012-04-30T15%3A07.html">linking the version numbers of our compiled files
         to the revision number of the SVN</a>, I also wanted to link the installer project's version numbers so that
         every new build would automatically be treated as an upgrade to the previous build. I thought about using the
         Powershell script I had used in my previous post, but .vdproj files need new productcode and packagecode GUIDs
@@ -35,7 +35,7 @@
         variable on the build machine I set to the full filename and path of the VersionVDProj executable. If you recall
         from past post about <a href="../../2011/08/2011-08-26.html">the devenvbuild runner I built</a>,
         Project1Installer builds after Project1. The $(TargetPath) variable sets the vdproj version to match the major,
-        minor and build version of Project1. If you followed <a href="2012-04-30T15:07.html">my last post</a>,
+        minor and build version of Project1. If you followed <a href="2012-04-30T15%3A07.html">my last post</a>,
         Project1's version matches the TeamCity build and SVN revision number. So now the project installer version
         number matches the TeamCity build number every time it is built.</p>
 </article>
