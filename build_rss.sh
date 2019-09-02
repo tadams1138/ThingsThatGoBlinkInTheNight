@@ -9,7 +9,7 @@ cat > rss.xml << EOF
     <description>A blog for Tom Adams tech ramblings</description>
 EOF
 
-find . -name '[0-9]*.html' | sort -r | head -5 | while read fname; do
+find . -not -name "404.html" -name '[0-9]*.html' | sort -r | head -5 | while read fname; do
     title="$(grep -P -o '(?<=<title>).*(?=</title>)' "$fname")"
 cat >> rss.xml << EOF
     <item>

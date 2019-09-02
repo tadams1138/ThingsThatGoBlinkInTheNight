@@ -5,7 +5,7 @@ cat > sitemap.xml << EOF
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 EOF
 
-find . -path ./p -prune -o -name '*.html' -print | while read fname; do
+find . -not -path "./p/*" -not -name "404.html" -name '*.html' | while read fname; do
   [[ "$fname" = "./index.html" ]] && frequency="weekly" || frequency="never"
 cat >> sitemap.xml << EOF
    <url>
