@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Linking .Net software versions to repository versions using TeamCity</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Linking .Net software versions to repository versions using TeamCity</h1>
+    </header>
+
+    <p>I tried to link the version numbers of our compiled files to the revision number of the SVN when the source that
+        the file was built on was committed. My goal is to have a version number for every binary that looks like
+        MAJOR.MINOR.TEAMCITY_BUILD.SVN_REVISION.</p>
+
+    <p>TeamCity has a handy tool on the <strong>Build Steps</strong> page of the project's build configuration. At the
+        bottom where it says "<strong>Additional Build Features</strong>", you can add "<a
+                href="http://confluence.jetbrains.net/display/TCD65/AssemblyInfo+Patcher">AssemblyInfo patcher</a>"
+        which will set the whole version number in every AssemblyInfo.* file in your project. Very handy... unless you
+        want to be Mr. Special-case like myself.</p>
+
+    <p>You see, I have several .Net projects within this one TeamCity project, and they need different major and minor
+        versions. Several of these projects have already gone through multiple development iterations, so I have a 4.X
+        version of one program, and a 1.X version of another. I have a need to increment the Major and Minor versions of
+        several different projects separately, but I still want to apply the TEAMCITY_BUILD.SVN_REVISION numbers too. I
+        don't much like the idea of syncing up all the major and minor version numbers, nor do I really want to figure
+        out the best way to break all the projects up into different TeamCity projects linking them via dependencies or
+        whatever.</p>
+
+    <p>Peter von Lochow <a href="http://blog.jayway.com/2011/09/07/setting-assemblyversion-number-in-teamcity-6-5/">posted</a>
+        about this very need, and solves my problem in his comments section.</p>
+
+    <p>So here's my slightly modified solution based on Peter von Lochow's comment:</p>
+
+    <p>Set the <strong>Build number format</strong> in the <strong>General Settings</strong> section of the project's
+        configuration to <samp>{0}.%build.vcs.number%</samp> - in this case, that is the build counter followed by the
+        SVN revision number.</p>
+
+    <p>Add a <strong>Powershell</strong> build step to the TeamCity project, and reorder the build steps so that this
+        new step is the first to run.
+
+    <p>Set <strong>Powersehll run mode</strong> to <strong>x86</strong>, set <strong>Script</strong> to <strong>Source
+        code</strong>, and set <strong>Script execution mode</strong> to <strong>Put script into PowerShell stdin with
+        "-Command -" arguments</strong>.
+
+    <p>Script source:</p>
+
+    <pre><code>(Get-childitem -include AssemblyInfo.* -recurse) | Foreach-Object { sc $_ ((Get-content $_) -replace '^(.*AssemblyVersion\(\"\d\.\d)\..+(\"\).*)$', '$1.%build.number%$2' -replace '^(.*AssemblyFileVersion\(\"\d\.\d)\..+(\"\).*)$', '$1.%build.number%$2')}</code></pre>
+
+    <p>That regular expression will replace whatever falls between the major.minor version numbers and ") with whatever
+        we set the <strong>Build number format</strong> in Teamcity - in this case we set it to the build counter and
+        the SVN revision number.</p>
+
+    <p>Now Teamcity will compile with build numbers and SVN revision numbers in the file versions. This should make it
+        much easier when trying to track bugs found in deployed files now that you can match up a snapshot of the SVN to
+        that compile.</p>
+
+    <p>Next up: get the setup projects (MSI projects) to increment their version numbers to match the TEAMCITY_BUILD
+        number.</p>
+</article>
+</body>
+</html>
