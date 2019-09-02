@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Built a TeamCity VB6.exe output parser</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Built a TeamCity VB6.exe output parser</h1>
+    </header>
+
+    <p>This post follows a <a href="../../2011/08/2011-08-26.html">previous post</a> where I built a devenv.com output
+        parser based on code from Wolfgang Kleinschmit. I’ve modified the code now to parse the output from a Visual
+        Basic 6 compile so that TeamCity knows whether or not a build failed and why. I compile this program and place
+        it in the same directory as VB6.exe. Then from TeamCity, I will use a command line build step that calls the
+        compiled application instead of VB6.exe.</p>
+
+    <p>Sample command line build step custom script:</p>
+
+    <samp>vb6buildrunner.exe /m "project1.vbp"</samp>
+
+    <p>Make sure that the build machine knows the path to vb6buildrunner.exe (perhaps put the path to the executable in
+        the environment path variable).</p>
+
+    <p>Below is the code for VB6 output parser. Just create a VB.Net console app and paste the below code into it.</p>
+
+    <pre class="vb"><code>Imports System.IO
+Imports System.Text
+Imports System.Text.RegularExpressions
+Imports System.Threading
+
+Module Program
+
+    Private projectName As String
+    Private logFile As String
+    Private commandLineFail As Boolean
+    Private buildFailed As Boolean
+
+    Sub Main()
+
+        If My.Application.CommandLineArgs.Count &gt; 0 Then
+            For i = 0 To My.Application.CommandLineArgs.Count - 1
+                Dim a As String = My.Application.CommandLineArgs(i)
+
+                If String.Compare(a, "/out", True) = 0 OrElse _
+                    String.Compare(a, "/r", True) = 0 OrElse _
+                    String.Compare(a, "/run", True) = 0 OrElse _
+                    String.Compare(a, "/runexit", True) = 0 Then
+
+                    ProcessLine(String.Format("ERROR: Argument '{0}' is not allowed by the build runner.", a))
+                    commandLineFail = True
+
+                ElseIf String.Compare(a, "/make", True) = 0 OrElse _
+                    String.Compare(a, "/m", True) = 0 Then
+
+                    projectName = My.Application.CommandLineArgs(i + 1)
+                    logFile = projectName & ".makelog"
+                End If
+
+            Next
+        End If
+
+        Console.Out.WriteLine("##teamcity[progressMessage 'VB6 Compiling for project {0}']", projectName)
+        Console.Out.Flush()
+
+        If Not commandLineFail Then
+
+            If File.Exists(logFile) Then
+                File.Delete(logFile)
+                logFile &= "1"
+            ElseIf File.Exists(logFile & "1") Then
+                File.Delete(logFile & "1")
+            End If
+
+            Dim pattern As String = String.Format("^[""]?({0})[""]?\s*", Environment.GetCommandLineArgs()(0).Replace("\", "\\"))
+            Dim rgx As New Regex(pattern)
+            Dim argumentsOnly As String = rgx.Replace(Environment.CommandLine, String.Empty)
+            argumentsOnly &= String.Format(" /out ""{0}""", logFile)
+
+            Dim psi As New ProcessStartInfo("vb6.exe")
+            psi.Arguments = argumentsOnly
+            psi.CreateNoWindow = True
+            psi.ErrorDialog = False
+            psi.RedirectStandardError = True
+            psi.RedirectStandardOutput = True
+            psi.UseShellExecute = False
+
+            Dim P As Process = Process.Start(psi)
+
+            Dim StdOReader As New Thread(New ParameterizedThreadStart(AddressOf ReadStd))
+            StdOReader.Start(P.StandardOutput)
+            Dim StdEReader As New Thread(New ParameterizedThreadStart(AddressOf ReadStd))
+            StdEReader.Start(P.StandardError)
+
+            P.WaitForExit()
+            Environment.ExitCode = P.ExitCode
+
+            StdOReader.Join()
+            StdEReader.Join()
+
+            Dim objReader As New StreamReader(logFile)
+            Try
+                Dim sLine As String
+                Do
+                    sLine = objReader.ReadLine()
+                    If Not String.IsNullOrWhiteSpace(sLine) Then
+                        ProcessLine(sLine)
+                    End If
+                Loop Until sLine Is Nothing
+            Finally
+                objReader.Close()
+            End Try
+
+        Else
+            Environment.ExitCode = 1
+        End If
+
+        For Each key As Integer In flows.Keys
+            Dim lines As List(Of String) = flows(key)
+
+            For Each tcLine As String In lines
+                Console.Out.WriteLine(tcLine)
+            Next
+        Next
+
+        If buildFailed Then
+            Console.Out.WriteLine("##teamcity[message status='FAILURE' errorDetails='' text='[000|] Build failed.']")
+        End If
+
+        Console.Out.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++")
+        Console.Out.Flush()
+    End Sub
+
+    Sub ReadStd(obj As Object)
+        Dim R As TextReader = DirectCast(obj, TextReader)
+        Dim line As String = R.ReadLine
+        Do While (line IsNot Nothing)
+            ProcessLine(line)
+            line = R.ReadLine
+        Loop
+    End Sub
+
+    Public rxMessage As New Regex("succeeded", RegexOptions.Compiled)
+    Public flows As New Dictionary(Of Integer, List(Of String))
+
+    Sub ProcessLine(line As String)
+        Dim flowID As Integer = 0
+        Dim status As String = "ERROR"
+
+        If String.IsNullOrWhiteSpace(line) Then
+            Return
+        End If
+
+        If line.StartsWith("Build of ") AndAlso line.EndsWith(" succeeded.") Then
+            status = "NORMAL"
+        Else
+            buildFailed = True
+        End If
+
+        line = QuoteLine(line)
+
+        If (Not flows.ContainsKey(flowID)) Then
+            flows(flowID) = New List(Of String)()
+        End If
+
+        Dim fmtLine As String = String.Format("##teamcity[message status='{2}' errorDetails='' text='[{0:000}|] {1}']", flowID, line, status)
+        flows(flowID).Add(fmtLine)
+    End Sub
+
+    Function QuoteLine(line As String) As String
+        Dim sb As New StringBuilder
+
+        For Each c As Char In line
+            If ("'|]" & Environment.NewLine).IndexOf(c) &lt;&gt; -1 Then
+                sb.Append("|"c)
+            End If
+            sb.Append(c)
+        Next
+
+        line = sb.ToString()
+        Return line
+    End Function
+
+End Module</code></pre>
+
+</article>
+
+<h2>Comments</h2>
+
+<p>Unknown April 8, 2014 at 1:57 AM<br>
+    Any idea on how to get vb6.exe to run as admin on Teamcity? I need to do this when compiling with binary
+    compatibility.</p>
+
+<p>Whale Biologist - Tom Adams April 15, 2014 at 9:20 AM<br>
+    I don't recall off the top of my head, but you might try setting vb6.exe or the buildrunner to always use admin.
+    Right click the executable in Explorer, click properties. Compatibility tab, Change Settings for all users, check
+    Run the program as an Administrator. If that doesn't work for you there are ways to get your .net buildrunner to
+    always start as admin.
+    http://www.developerfusion.com/code/7987/making-a-net-app-run-on-vista-with-administrator-priviledges/ Remember to
+    probably turn UAC off on your build machine.</p>
+</body>
+</html>

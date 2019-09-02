@@ -15,19 +15,19 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
-      <title>How to fix a .resx file that won’t compile for .Net 3.5</title>
-      <link>https://www.tandisoft.com/2011/10/2011-10-22.html</link>
-      <description>How to fix a .resx file that won’t compile for .Net 3.5</description>
+      <title>Construct WCF Binding from string (XML)</title>
+      <link>https://www.tandisoft.com/2012/02/2012-02-14.html</link>
+      <description>Construct WCF Binding from string (XML)</description>
     </item>
     <item>
-      <title>The dependencies for the object cannot be determined</title>
-      <link>https://www.tandisoft.com/2011/09/2011-09-09.html</link>
-      <description>The dependencies for the object cannot be determined</description>
+      <title>How to solve: DataSets change DateTime values when transmitted across time zones</title>
+      <link>https://www.tandisoft.com/2012/02/2012-02-06.html</link>
+      <description>How to solve: DataSets change DateTime values when transmitted across time zones</description>
     </item>
     <item>
-      <title>Building Visual Studio setup projects with TeamCity</title>
-      <link>https://www.tandisoft.com/2011/08/2011-08-26.html</link>
-      <description>Building Visual Studio setup projects with TeamCity</description>
+      <title>Serializing, Deserializing, Deserialization surrogates, and Deserializing data into a dynamically loaded Assembly</title>
+      <link>https://www.tandisoft.com/2012/02/2012-02-03.html</link>
+      <description>Serializing, Deserializing, Deserialization surrogates, and Deserializing data into a dynamically loaded Assembly</description>
     </item>
   </channel>
 </rss>

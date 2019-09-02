@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Built a TeamCity makensis.exe output parser</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Built a TeamCity makensis.exe output parser</h1>
+    </header>
+
+    <p>This post follows a <a href="../../2011/08/2011-08-26.html">previous post</a> where I built a devenv.com output
+        parser based on code from Wolfgang Kleinschmit. I’ve modified the code now to parse the output from a <a
+                href="http://nsis.sourceforge.net/Main_Page">NSIS (NullSoft Scriptable Installer System)</a> installer
+        script compile so that TeamCity knows whether or not an installer build failed and why. I compile this program
+        and place it in the same directory as makensis.exe. Then from TeamCity, I will use a command line build step
+        that calls the compiled application instead of makensis.exe.</p>
+
+    <p>Sample command line build step custom script:</p>
+
+    <samp>makensisbuildrunner.exe "installer.nsi"</samp>
+
+    <p>Make sure that the build machine knows the path to makensisbuildrunner.exe (perhaps put the path to the
+        executable in the environment path variable).</p>
+
+    <p>Below is the code for NSIS output parser. Just create a VB.Net console app and paste the below code into it.</p>
+
+    <pre class="vb"><code>Imports System.IO
+Imports System.Text
+Imports System.Text.RegularExpressions
+Imports System.Threading
+
+Module Program
+
+    Private buildFailed As Boolean
+
+    Sub Main()
+
+        Dim pattern As String = String.Format("^[""]?({0})[""]?\s*", Environment.GetCommandLineArgs()(0).Replace("\", "\\"))
+        Dim rgx As New Regex(pattern)
+        Dim argumentsOnly As String = rgx.Replace(Environment.CommandLine, String.Empty)
+        Dim psi As New ProcessStartInfo("makensis.exe")
+
+        psi.Arguments = argumentsOnly
+        psi.CreateNoWindow = True
+        psi.ErrorDialog = False
+        psi.RedirectStandardError = True
+        psi.RedirectStandardOutput = True
+        psi.UseShellExecute = False
+
+        Dim P As Process = Process.Start(psi)
+
+        Dim StdOReader As New Thread(New ParameterizedThreadStart(AddressOf ReadStd))
+        StdOReader.Start(P.StandardOutput)
+        Dim StdEReader As New Thread(New ParameterizedThreadStart(AddressOf ReadStd))
+        StdEReader.Start(P.StandardError)
+
+        P.WaitForExit()
+
+        StdOReader.Join()
+        StdEReader.Join()
+        Console.Out.Flush()
+        Environment.ExitCode = P.ExitCode
+    End Sub
+    Sub ReadStd(obj As Object)
+        Dim R As TextReader = DirectCast(obj, TextReader)
+        Dim line As String = R.ReadLine
+        Do While (line IsNot Nothing)
+            ProcessLine(line)
+            line = R.ReadLine
+        Loop
+    End Sub
+    Public rxMessage As New Regex("!system: returned 1", RegexOptions.Compiled)
+    Public rxMessage2 As New Regex(" -&gt; no files found.", RegexOptions.Compiled)
+    Public rxMessage3 As New Regex("aborting creation process", RegexOptions.Compiled)
+    Public rxMessage4 As New Regex("Can't open script ", RegexOptions.Compiled)
+    Public rxMessage5 As New Regex("Invalid command: ", RegexOptions.Compiled)
+    Public rxFirstLine As New Regex("Processing script file:", RegexOptions.Compiled)
+
+    Public flows As New Dictionary(Of Integer, List(Of String))
+
+    Sub ProcessLine(line As String)
+        Dim flowID As Integer = 0
+        Dim M As Match
+        Dim status As String = "NORMAL"
+
+        If String.IsNullOrWhiteSpace(line) Then
+            Return
+        End If
+        M = rxMessage.Match(line)
+        If M IsNot Match.Empty Then
+            status = "ERROR"
+        End If
+        M = rxMessage2.Match(line)
+        If M IsNot Match.Empty Then
+            status = "ERROR"
+        End If
+        M = rxMessage3.Match(line)
+        If M IsNot Match.Empty Then
+            status = "FAILURE"
+        End If
+        M = rxMessage4.Match(line)
+        If M IsNot Match.Empty Then
+            status = "FAILURE"
+        End If
+
+        M = rxMessage5.Match(line)
+        If M IsNot Match.Empty Then
+            status = "ERROR"
+        End If
+        M = rxFirstLine.Match(line)
+        If M IsNot Match.Empty Then
+            Console.Out.WriteLine("##teamcity[progressMessage '{0}']", QuoteLine(line))
+        End If
+
+        line = QuoteLine(line)
+
+        If (Not flows.ContainsKey(flowID)) Then
+            flows(flowID) = New List(Of String)()
+        End If
+
+        Dim fmtLine As String = String.Format("##teamcity[message status='{2}' errorDetails='' text='[{0:000}|] {1}']", flowID, line, status)
+
+        Console.Out.WriteLine(fmtLine)
+        Console.Out.Flush()
+        flows(flowID).Add(fmtLine)
+    End Sub
+
+    Function QuoteLine(line As String) As String
+        Dim sb As New StringBuilder
+
+        For Each c As Char In line
+            If ("'|]" & Environment.NewLine).IndexOf(c) &lt;&gt; -1 Then
+                sb.Append("|"c)
+            End If
+            sb.Append(c)
+        Next
+
+        line = sb.ToString()
+        Return line
+    End Function
+
+End Module</code></pre>
+
+</article>
+</body>
+</html>

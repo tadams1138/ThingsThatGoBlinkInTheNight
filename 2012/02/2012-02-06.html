@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How to solve: DataSets change DateTime values when transmitted across time zones</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>How to solve: DataSets change DateTime values when transmitted across time zones</h1>
+    </header>
+
+    <p>In my last post, I described how I discovered that DataSet objects when transmitted across time zones would alter the DateTime objects to match the new time zone.  As I mentioned then, this was a problem as we weren’t transmitting the time zone information with the DataSets, so we couldn’t translate the times back.  The data we were collecting was more time-of-day specific than universal time specific.  We were interested in data around times like “rush hour” which we could define on the side where we received the data.  But we couldn’t very well define rush hour when 6pm on the west coast was reading as 9pm when we received it on the east coast.</p>
+
+    <p>We briefly toyed with the idea of modifying the XML of all serialized DataSets after they were received but before they were deserialized.  Rather than what is probably a questionable engineering decision and doing this to all DatSets without regard to their purpose, we settled on a solution based on what we learned about the DateTimeMode property of all DataColumns with a DataType of DateTime at <a href="https://connect.microsoft.com/wcf/feedback/details/488856/datetime-values-in">https://connect.microsoft.com/wcf/feedback/details/488856/datetime-values-in</a></p>
+
+    <p>I wrote an extension method for the DataSet type.  Now you can set the DateTimeMode property of all columns in a DataSet all at once.</p>
+
+    <p>Now to preserve the local time values within a DataSet, I call <code class="vb">myDataSet.SetDateTimeMode(DataSetDateTime.Unspecified)</code> before I transmit the DataSet across the network.  Hope this helps!</p>
+
+    <pre class="vb"><code>Imports System.Runtime.CompilerServices
+
+Public Module DataSetExtensions
+
+    ''' &lt;summary&gt;Sets the
+    ''' &lt;see cref="System.Data.DataColumn.DateTimeMode"&gt;DateTimeMode&lt;/see&gt;
+    ''' property for all &lt;see cref="System.Data.DataColumn"&gt;System.Data.DataColumn&lt;/see&gt;
+    ''' objects within the &lt;see cref="System.Data.DataSet"&gt;System.Data.DataSet&lt;/see&gt;
+    ''' where the data type is &lt;see cref="System.DateTime"&gt;DateTime&lt;/see&gt;.&lt;/summary&gt;
+    ''' &lt;param name="d"&gt;The &lt;see cref="System.Data.DataSet"&gt;System.Data.DataSet&lt;/see&gt;
+    ''' to modify.&lt;/param&gt;
+        ''' &lt;param name="dateTimeMode"&gt;The new date time mode to apply to every
+    ''' &lt;see cref="System.Data.DataColumn"&gt;System.Data.DataColumn&lt;/see&gt; where the
+    ''' data type is &lt;see cref="System.DateTime"&gt;System.DateTime&lt;/see&gt;.&lt;/param&gt;
+        &lt;Extension()&gt; _
+    Public Sub SetDateTimeMode(ByVal d As DataSet, dateTimeMode As DataSetDateTime)
+        For Each t As DataTable In d.Tables
+            For Each c As DataColumn In t.Columns
+                If c.DataType Is GetType(DateTime) Then
+                    c.DateTimeMode = dateTimeMode
+                End If
+            Next
+        Next
+    End Sub
+
+End Module</code></pre>
+
+</article>
+</body>
+</html>

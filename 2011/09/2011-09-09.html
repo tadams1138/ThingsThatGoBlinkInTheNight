@@ -13,25 +13,37 @@
         <h1>The dependencies for the object cannot be determined</h1>
     </header>
 
-    <p>Our automated TeamCity builds would fail for one of our .Net setup projects (vdproj) which included a particular ActiveX control, the GeoVision LiveX control.  The build process utilized the devenv.com command line method of building a .Net solution.</p>
+    <p>Our automated TeamCity builds would fail for one of our .Net setup projects (vdproj) which included a particular
+        ActiveX control, the GeoVision LiveX control. The build process utilized the devenv.com command line method of
+        building a .Net solution.</p>
 
     <p>e.g., devenv.com “MySolution.sln” /rebuild “Release|AnyCPU”</p>
 
-    <p>The application project would compile just fine, but you would see the following error whenever the setup project tried to compile:</p>
+    <p>The application project would compile just fine, but you would see the following error whenever the setup project
+        tried to compile:</p>
 
-    <sample>"ERROR: Unable to update the dependencies of the project. The dependencies for the object 'Interop.LIVEXLib.dll' cannot be determined."</sample>
+    <samp>"ERROR: Unable to update the dependencies of the project. The dependencies for the object
+        'Interop.LIVEXLib.dll' cannot be determined."</samp>
 
-    <p>Luckily I found a hint in the right direction: <a href="https://connect.microsoft.com/VisualStudio/feedback/details/552799">https://connect.microsoft.com/VisualStudio/feedback/details/552799</a></p>
+    <p>Luckily I found a hint in the right direction: <a
+            href="https://connect.microsoft.com/VisualStudio/feedback/details/552799">https://connect.microsoft.com/VisualStudio/feedback/details/552799</a>
+    </p>
 
-    <p>Johan Spännare suggests that you “Manually edit your .vdproj file [in notepad]. And remove everthing in the "File" tag.”</p>
+    <p>Johan Spännare suggests that you “Manually edit your .vdproj file [in notepad]. And remove everthing in the
+        "File" tag.”</p>
 
-    <p>This option is not perfect for me since I also have set particular options for some of the files found in this section.</p>
+    <p>This option is not perfect for me since I also have set particular options for some of the files found in this
+        section.</p>
 
-    <p>I found a slightly less nuclear option would be to just remove all references to the library that is causing the problem, which works since I don’t have any particular options set for it beyond the defaults that Visual Studio applies to it.</p>
+    <p>I found a slightly less nuclear option would be to just remove all references to the library that is causing the
+        problem, which works since I don’t have any particular options set for it beyond the defaults that Visual Studio
+        applies to it.</p>
 
-    <p>So I ended up remove 3 sections, the one that referred to Interop.LIVEXLib.dll, AxInterop.LIVEXLib.dll, and of course the ActiveX control that these two referred two, LiveX_8320.ocx.</p>
+    <p>So I ended up remove 3 sections, the one that referred to Interop.LIVEXLib.dll, AxInterop.LIVEXLib.dll, and of
+        course the ActiveX control that these two referred two, LiveX_8320.ocx.</p>
 
-    <p>Each section looked something like the following but with SourcePath field referring to one of the files I mentioned.</p>
+    <p>Each section looked something like the following but with SourcePath field referring to one of the files I
+        mentioned.</p>
 
     <pre><code>"{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_BE80CBD47768DB03324AE850B3E5FEC9"
 {
@@ -65,11 +77,13 @@
     "IsolateTo" = "8:"
 }</code></pre>
 
-    <p>After I removed those 3 sections with notepad, I saved the file.  I committed my changes to the SVN, and waited for TeamCity to rebuild the whole solution.  The build succeeded.</p>
+    <p>After I removed those 3 sections with notepad, I saved the file. I committed my changes to the SVN, and waited
+        for TeamCity to rebuild the whole solution. The build succeeded.</p>
 
-    <p>So now I just have to remember to perform that process every time someone makes a change to the setup project (which happens frequently enough).</p>
+    <p>So now I just have to remember to perform that process every time someone makes a change to the setup project
+        (which happens frequently enough).</p>
 
-    <p>Next step:  automate this removal process.</p>
+    <p>Next step: automate this removal process.</p>
 </article>
 </body>
 </html>
