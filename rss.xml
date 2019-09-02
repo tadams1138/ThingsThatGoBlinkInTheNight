@@ -15,6 +15,11 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
+      <title>Linking Setup project versions to TeamCity build numbers</title>
+      <link>https://www.tandisoft.com/2012/02/2012-04-30T17:17.html</link>
+      <description>Linking Setup project versions to TeamCity build numbers</description>
+    </item>
+    <item>
       <title>Linking .Net software versions to repository versions using TeamCity</title>
       <link>https://www.tandisoft.com/2012/02/2012-04-30T15:07.html</link>
       <description>Linking .Net software versions to repository versions using TeamCity</description>
@@ -23,11 +28,6 @@
       <title>XmlConfigMerge - Merge config file settings</title>
       <link>https://www.tandisoft.com/2012/02/2012-02-17.html</link>
       <description>XmlConfigMerge - Merge config file settings</description>
-    </item>
-    <item>
-      <title>1 Year!</title>
-      <link>https://www.tandisoft.com/2012/02/2012-02-14T09:02.html</link>
-      <description>1 Year!</description>
     </item>
   </channel>
 </rss>
