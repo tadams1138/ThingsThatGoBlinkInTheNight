@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>1 Year!</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>1 Year!</h1>
+    </header>
+
+    <p>A class library I developed required various system.serviceModel settings present in the application configuration that uses the library. There needed to be a way to modify the application configuration file during library installation.  To make my life easy, I modified the <a href="http://www.codeproject.com/KB/install/XmlConfigMerge.aspx?display=Print">XmlConfigMergeclass by buc</a> to accept XDocument objects as the master configuration.  I used this to upgrade the configuration files with XML stored within a library using an Installer class:</p>
+
+    <pre><code>Imports System.Configuration.Install
+
+''' &lt;summary&gt;Installer class for all the necessary components for the library.&lt;/summary&gt;
+&lt;System.ComponentModel.RunInstaller(True)&gt; _
+Public Class LibraryInstaller
+    Inherits Installer
+
+    Dim masterConfig As XDocument = _
+        &lt;?xml version="1.0" encoding="utf-8"?&gt;
+        &lt;configuration&gt;
+            &lt;system.serviceModel&gt;
+                &lt;bindings&gt;
+                    &lt;netTcpBinding&gt;
+                        &lt;binding name="NetTcpBinding_IService"&gt;
+                            &lt;security mode="None"&gt;
+                                &lt;transport clientCredentialType="Windows"
+                                           protectionLevel="EncryptAndSign"/&gt;
+                                &lt;message clientCredentialType="Windows"/&gt;
+                            &lt;/security&gt;
+                        &lt;/binding&gt;
+                    &lt;/netTcpBinding&gt;
+                &lt;/bindings&gt;
+                &lt;client&gt;
+                    &lt;endpoint address="net.tcp://localhost:81/ServiceEndpoint"
+                              binding="netTcpBinding"
+                              bindingConfiguration="NetTcpBinding_IService"
+                              contract="ServiceReference.IService"
+                              name="NetTcpBinding_IService"/&gt;
+                &lt;/client&gt;
+            &lt;/system.serviceModel&gt;
+        &lt;/configuration&gt;
+
+    Public Overrides Sub Commit(savedState As System.Collections.IDictionary)
+        MyBase.Commit(savedState)
+        Dim configFileMgr As ConfigFileManager
+
+        'expecting a list of configuration files to update with the necessary
+        'configuration nodes defined in the configuration XDocument variable
+        Dim configFilesParameter As String = _
+            Me.Context.Parameters("ConfigurationFiles")
+
+        If Not String.IsNullOrWhiteSpace(configFilesParameter) Then
+            Dim configFiles() As String = configFilesParameter.Split(";"c)
+
+            For Each c As String In configFiles
+                configFileMgr = New ConfigFileManager(masterConfig, c)
+                configFileMgr.Save()
+            Next
+        End If
+    End Sub
+
+End Class</code></pre>
+
+    <p>Now whichever install package we use to install this library, we include the custom actions defined within the library.  The necessary XML nodes will be merged into whatever application configuration files are passed to the library Commit method in the ConfigurationFiles parameter.</p>
+
+    <p>Here’s the modified ConfigFileManager that accepts XDocument as the master configuration:</p>
+
+<pre class="vb"><code>
+'XmlConfigMerge - Merge config file settings
+'By buc
+'http://www.codeproject.com/KB/install/XmlConfigMerge.aspx?display=Print
+'Posted: 13 Jun 2004
+'Downloaded 2/17/09
+'converted to VB by http://www.developerfusion.com/tools/convert/csharp-to-vb/
+'Modified 2/2/2012 by Tom Adams to accept XmlDocument as the master configuration
+
+Imports System.Xml
+Imports System.IO
+Imports System.Text.RegularExpressions
+
+''' &lt;summary&gt;Manages config file reading and writing, and optional merging of two config
+''' files.&lt;/summary&gt;
+&lt;Serializable()&gt; _
+Public Class ConfigFileManager
+
+    Private Shared _typeParsePattern As New Regex("([^,]+),")
+    Private m_configPath As String
+    Private m_xmlDocument As XmlDocument
+
+#Region "Constructors"
+
+    ''' &lt;summary&gt;Initializes a new instance of the ConfigFileManager class.&lt;/summary&gt;
+    ''' &lt;param name="masterConfigPath"&gt;The file path to the master configuration to
+    ''' modify.&lt;/param&gt;
+        ''' &lt;remarks&gt;The resulting merge will save to the file path specified in the
+    ''' &lt;paramref name="masterConfigPath"&gt;masterConfigPath&lt;/paramref&gt; argument.&lt;/remarks&gt;
+    Public Sub New(ByVal masterConfigPath As String)
+        Me.New(masterConfigPath, Nothing)
+    End Sub
+
+    ''' &lt;summary&gt;Initializes a new instance of the ConfigFileManager class.&lt;/summary&gt;
+    ''' &lt;param name="masterConfigPath"&gt;The file path to the master configuration to
+    ''' merge.&lt;/param&gt;
+        ''' &lt;param name="mergeFromConfigPath"&gt;The file path to the configuration to merge
+    ''' from.&lt;/param&gt;
+        ''' &lt;remarks&gt;The resulting merge will save to the file path specified in the
+    ''' &lt;paramref name="masterConfigPath"&gt;masterConfigPath&lt;/paramref&gt; argument.&lt;/remarks&gt;
+    ''' &lt;exception cref="ArgumentException"&gt;If
+    ''' &lt;paramref name="mergeFromConfigPath"&gt;mergeFromConfigPath&lt;/paramref&gt; is specified
+    ''' but does not exist.&lt;/exception&gt;
+    Public Sub New(ByVal masterConfigPath As String, ByVal mergeFromConfigPath As String)
+        Me.New(masterConfigPath, mergeFromConfigPath, False)
+        'makeMergeFromConfigPathTheSavePath
+    End Sub
+
+    ''' &lt;summary&gt;Initializes a new instance of the ConfigFileManager class.&lt;/summary&gt;
+    ''' &lt;param name="masterConfigPath"&gt;The file path to the master configuration to
+    ''' merge.&lt;/param&gt;
+        ''' &lt;param name="mergeFromConfigPath"&gt;The file path to the configuration to merge
+    ''' from.&lt;/param&gt;
+        ''' &lt;param name="makeMergeFromConfigPathTheSavePath"&gt;If &lt;c&gt;True&lt;/c&gt;, then the
+    ''' resulting merge will save to the file path specified in the
+    ''' &lt;paramref name="mergeFromConfigPath"&gt;mergeFromConfigPath&lt;/paramref&gt; argument.If
+    ''' &lt;c&gt;False&lt;/c&gt;, then the resulting merge will save to
+    ''' the file path specified in the
+    ''' &lt;paramref name="masterConfigPath"&gt;masterConfigPath&lt;/paramref&gt; argument.&lt;/param&gt;
+        ''' &lt;exception cref="ArgumentException"&gt;If
+    ''' &lt;paramref name="mergeFromConfigPath"&gt;mergeFromConfigPath&lt;/paramref&gt; is specified
+    ''' but does not exist,
+    ''' and &lt;paramref name="makeMergeFromConfigPathTheSavePath"&gt;
+    ''' makeMergeFromConfigPathTheSavePath&lt;/paramref&gt; is false.&lt;/exception&gt;
+    Public Sub New(ByVal masterConfigPath As String, ByVal mergeFromConfigPath As String,
+                   ByVal makeMergeFromConfigPathTheSavePath As Boolean)
+        m_configPath = masterConfigPath
+        Dim fromLastInstallConfigPath As String = mergeFromConfigPath
+
+        If mergeFromConfigPath IsNot Nothing AndAlso _
+            (Not File.Exists(mergeFromConfigPath)) AndAlso _
+            Not makeMergeFromConfigPathTheSavePath Then
+
+            Throw New ArgumentException( _
+                String.Format("File '{0}' does not exist", mergeFromConfigPath), _
+                "mergeFromConfigPath")
+        End If
+
+        m_xmlDocument = New XmlDocument
+
+        Try
+            m_xmlDocument.Load(masterConfigPath)
+        Catch ex As Exception
+            Throw New ArgumentException( _
+                "Could not open '" & masterConfigPath & "'", _
+                "masterConfigPath", ex)
+        End Try
+
+        If mergeFromConfigPath IsNot Nothing AndAlso _
+            File.Exists(mergeFromConfigPath) Then
+
+            Debug.WriteLine("Merging from " & mergeFromConfigPath)
+            'Merge approach:
+            ' x Use from-last-install config as base
+            ' x Merge in any non-existing keyvalue pairs from distrib-config
+            ' x Use this merged config, and leave the last-install-config file in place
+            ' for reference
+            'Merge, preserving any comments from distrib-one only
+
+            Dim reInstallConfig As New XmlDocument()
+
+            Try
+                reInstallConfig.Load(mergeFromConfigPath)
+            Catch ex As Exception
+                fromLastInstallConfigPath = Nothing
+                Throw New ArgumentException( _
+                    ("Could not read existing config '" & mergeFromConfigPath & "'"), _
+                    "mergeFromConfigPath", ex)
+            End Try
+
+            UpdateExistingElementsAndAttribs(reInstallConfig, m_xmlDocument)
+
+        End If
+
+        If makeMergeFromConfigPathTheSavePath Then
+            m_configPath = fromLastInstallConfigPath
+        End If
+
+    End Sub
+
+    ''' &lt;summary&gt;Initializes a new instance of the ConfigFileManager class.&lt;/summary&gt;
+    ''' &lt;param name="masterConfigPath"&gt;The master configuration to merge.&lt;/param&gt;
+        ''' &lt;param name="mergeFromConfigPath"&gt;The file path to the configuration to merge
+    ''' from.&lt;/param&gt;
+        ''' &lt;remarks&gt;The resulting merge will save to the file path specified in the
+    ''' &lt;paramref name="mergeFromConfigPath"&gt;mergeFromConfigPath&lt;/paramref&gt; argument.
+    ''' &lt;/remarks&gt;
+    ''' &lt;exception cref="ArgumentNullException"&gt;If
+    ''' &lt;paramref name="masterConfigPath"&gt;masterConfigPath&lt;/paramref&gt; is null.
+    ''' &lt;/exception&gt;
+    Public Sub New(ByVal masterConfigPath As System.Xml.Linq.XDocument, _
+                   ByVal mergeFromConfigPath As String)
+
+        Dim xmlDoc As New Xml.XmlDocument
+        xmlDoc.LoadXml(masterConfigPath.ToString)
+        Load(xmlDoc, mergeFromConfigPath)
+    End Sub
+
+    ''' &lt;summary&gt;Initializes a new instance of the ConfigFileManager class.&lt;/summary&gt;
+    ''' &lt;param name="masterConfigPath"&gt;The master configuration to merge.&lt;/param&gt;
+        ''' &lt;param name="mergeFromConfigPath"&gt;The file path to the configuration to merge
+    ''' from.&lt;/param&gt;
+        ''' &lt;remarks&gt;The resulting merge will save to the file path specified in the
+    ''' &lt;paramref name="mergeFromConfigPath"&gt;mergeFromConfigPath&lt;/paramref&gt; argument.
+    ''' &lt;/remarks&gt;
+    ''' &lt;exception cref="ArgumentNullException"&gt;If
+    ''' &lt;paramref name="masterConfigPath"&gt;masterConfigPath&lt;/paramref&gt; is null.
+    ''' &lt;/exception&gt;
+    Public Sub New(ByVal masterConfigPath As XmlDocument, _
+                   ByVal mergeFromConfigPath As String)
+
+        Load(masterConfigPath, mergeFromConfigPath)
+    End Sub
+
+#End Region
+
+#Region "Public Methods"
+
+    ''' &lt;summary&gt;The file path for the configuration.&lt;/summary&gt;
+    ''' &lt;returns&gt;The file path for the configuration.&lt;/returns&gt;
+    Public ReadOnly Property ConfigPath() As String
+        Get
+            Return m_configPath
+        End Get
+    End Property
+
+    ''' &lt;summary&gt;Get the value for the given xPath.&lt;/summary&gt;
+    ''' &lt;param name="xPath"&gt;The path to value to return.&lt;/param&gt;
+        ''' &lt;returns&gt;The value for the given xPath.&lt;/returns&gt;
+    Public Function GetXPathValue(ByVal xPath As String) As String
+        Dim node As XmlNode = XmlDocument.SelectSingleNode(xPath)
+        If node Is Nothing Then
+            Return Nothing
+        End If
+        Return node.InnerText
+    End Function
+
+    ''' &lt;summary&gt;Search and replace on one or more specified values as specified by a
+    ''' single xpath expression.&lt;/summary&gt;
+    ''' &lt;param name="xPath"&gt;The path to the values to replace.&lt;/param&gt;
+        ''' &lt;param name="replaceWith"&gt;The value to substitute.&lt;/param&gt;
+        ''' &lt;returns&gt;A description of the results.&lt;/returns&gt;
+    ''' &lt;exception cref="ArgumentNullException"&gt;No nodes match xpath-expression and
+    ''' no regexPattern is specified (is null).&lt;/exception&gt;
+    ''' &lt;exception cref="ArgumentOutOfRangeException"&gt;Can't auto-create the node
+    ''' (is not an appSettings expression).&lt;/exception&gt;
+    Public Function ReplaceXPathValues(ByVal xPath As String, _
+                                       ByVal replaceWith As String) As String()
+        Return ReplaceXPathValues(xPath, replaceWith, Nothing)
+    End Function
+
+    ''' &lt;summary&gt;Search and replace on one or more specified values as specified by a
+    ''' single xpath expression.&lt;/summary&gt;
+    ''' &lt;param name="xPath"&gt;The path to the values to replace.&lt;/param&gt;
+        ''' &lt;param name="replaceWith"&gt;The value to substitute.&lt;/param&gt;
+        ''' &lt;param name="regexPattern"&gt;Optionally specify a regex pattern to search within
+    ''' the found values.
+    ''' If a single () group is found within this expression, only this portion is
+    ''' replaced.&lt;/param&gt;
+        ''' &lt;returns&gt;A description of the results.&lt;/returns&gt;
+    ''' &lt;exception cref="ArgumentNullException"&gt;No nodes match xpath-expression and no
+    ''' regexPattern is specified (is null).&lt;/exception&gt;
+    ''' &lt;exception cref="ArgumentOutOfRangeException"&gt;Can't auto-create the node (is
+    ''' not an appSettings expression) or if
+    ''' regexPattern produces more than 1 replace group.&lt;/exception&gt;
+    Public Function ReplaceXPathValues(ByVal xPath As String, _
+                                       ByVal replaceWith As String, _
+                                       ByVal regexPattern As Regex) As String()
+
+        If String.IsNullOrWhiteSpace(xPath) Then
+            Throw New ArgumentNullException("xPath", _
+                                            "Cannot be null, empty or whitespace.")
+        End If
+
+        If replaceWith Is Nothing Then
+            Throw New ArgumentNullException("replaceWith", "Cannot be null.")
+        End If
+
+        Dim ret As New ArrayList()
+        Dim nodes As XmlNodeList = m_xmlDocument.SelectNodes(xPath)
+
+        'Check if no existing nodes match
+        If nodes.Count = 0 Then
+            If regexPattern IsNot Nothing Then
+                Return DirectCast(ret.ToArray(GetType(String)), String())
+                'no error or auto-create attempt when a pattern was specified
+            End If
+
+            'Check special case of fully-qualified appSetting key/value pair
+            Dim regex As New Regex("/configuration/appSettings/add" & _
+                                   "\[\@key=['""](.*)['""]\]/\@value")
+            Dim match As Match = regex.Match(xPath)
+            If Not match.Success Then
+                Throw New ArgumentException( _
+                    String.Format("'{0}' does not match any nodes, and may not be " & _
+                                  "auto-created since it is not of form '{1}'", _
+                                  xPath, regex.ToString()), "xPath")
+                'is an error when no pattern specified and can't auto-create
+            End If
+
+            'Auto create this one
+            Dim key As String = match.Result("$1")
+            SetKeyValue(key, "")
+            'Value is set below (unless no regex match)
+            ret.Add(("add/@key" & " created for key '") + key & "'")
+
+            nodes = m_xmlDocument.SelectNodes(xPath)
+        End If
+
+        'Proceed with replacements
+        Dim replacedOneOrMore As Boolean = False
+        For Each node As XmlNode In nodes
+            Dim replText As String = Nothing
+            If regexPattern IsNot Nothing Then
+                Dim match As Match = regexPattern.Match(node.InnerText)
+                If match.Success Then
+                    'Determine if group match applies
+                    Select Case match.Groups.Count
+                        Case 1
+                            replText = regexPattern.Replace(node.InnerText, replaceWith)
+                            Exit Select
+                        Case 2
+                            replText = String.Empty
+                            If match.Groups(2 - 1).Index &gt; 0 Then
+                                replText += node.InnerText.Substring(0, _
+                                                            match.Groups(2 - 1).Index)
+                            End If
+                            replText += replaceWith
+                            Dim firstPostGroupPos As Integer = _
+                                match.Groups(2 - 1).Index + match.Groups(2 - 1).Length
+                            If node.InnerText.Length &gt; firstPostGroupPos Then
+                                replText += node.InnerText.Substring(firstPostGroupPos)
+                            End If
+                            Exit Select
+                        Case Else
+                            Throw New ArgumentOutOfRangeException( _
+                                String.Format("&gt; 1 regex replace group not " & _
+                                              "supported ({0}) for regex expr: '{1}'", _
+                                              match.Groups.Count, _
+                                              regexPattern.ToString()))
+                    End Select
+                End If
+            Else
+                replText = replaceWith
+            End If
+
+            If replText IsNot Nothing Then
+                replacedOneOrMore = True
+                node.InnerText = replText
+                If TypeOf node Is XmlAttribute Then
+                    Dim keyAttrib As XmlAttribute = _
+                        DirectCast(node, XmlAttribute).OwnerElement.Attributes("key")
+                    If keyAttrib Is Nothing Then
+                        ret.Add(((DirectCast(node, XmlAttribute).OwnerElement.Name & _
+                                  "/@") + node.Name & " set to '") + replText & "'")
+                    Else
+                        ret.Add((((DirectCast(node, XmlAttribute).OwnerElement.Name & _
+                                   "[@key='") + keyAttrib.InnerText & "']/@") + _
+                                    node.Name & " set to '") + replText & "'")
+                    End If
+
+                Else
+                    ret.Add((node.Name & " set to '") + replText)
+                End If
+            End If
+        Next
+
+        If Not replacedOneOrMore Then
+            ret.Add(("No values matched replace pattern '" & regexPattern.ToString() & _
+                     "' for '") + xPath & "'")
+        End If
+
+        Return DirectCast(ret.ToArray(GetType(String)), String())
+    End Function
+
+    ''' &lt;summary&gt;The merged or modified configuration as an
+    ''' &lt;see cref="XmlDocument"&gt;XmlDocument&lt;/see&gt;.&lt;/summary&gt;
+    ''' &lt;returns&gt;The merged or modified configuration as an
+    ''' &lt;see cref="XmlDocument"&gt;XmlDocument&lt;/see&gt;.&lt;/returns&gt;
+    Public ReadOnly Property XmlDocument() As XmlDocument
+        Get
+            Return m_xmlDocument
+        End Get
+    End Property
+
+    ''' &lt;summary&gt;Saves the merged or modified configuration to the file path in the
+    ''' &lt;see cref="ConfigPath"&gt;ConfigPath&lt;/see&gt; property.&lt;/summary&gt;
+    Public Overridable Sub Save()
+        Save(ConfigPath)
+    End Sub
+
+    ''' &lt;summary&gt;Saves the merged or modified configuration to disk.&lt;/summary&gt;
+    ''' &lt;param name="saveAsname"&gt;The file path to save where the configuration will
+    ''' be written.&lt;/param&gt;
+        Public Overridable Sub Save(ByVal saveAsname As String)
+        'Ensure not set r/o
+        If File.Exists(saveAsname) Then
+            ClearSpecifiedFileAttributes(saveAsname, FileAttributes.[ReadOnly])
+        End If
+        m_xmlDocument.Save(saveAsname)
+    End Sub
+
+    ''' &lt;summary&gt;Gets the value of a key in the appSettings section.&lt;/summary&gt;
+    ''' &lt;param name="key"&gt;The key whose value will be returned.&lt;/param&gt;
+        ''' &lt;returns&gt;The value of the specified key.&lt;/returns&gt;
+    Public Function GetKeyValue(ByVal key As String) As String
+        If key Is Nothing OrElse key = String.Empty Then
+            Throw New ApplicationException("Required key is blank or null")
+        End If
+        Dim node As XmlNode = GetKeyValueNode(key)
+        If node Is Nothing Then
+            Return Nothing
+        End If
+        Return node.Attributes("value").InnerText
+    End Function
+
+    ''' &lt;summary&gt;Returns a &lt;see cref="Hashtable"&gt;HashTable&lt;/see&gt; of all key/value pairs
+    ''' in the appSettings section.&lt;/summary&gt;
+    ''' &lt;returns&gt;A &lt;see cref="Hashtable"&gt;HashTable&lt;/see&gt; of all key/value pairs
+    ''' in the appSettings section.&lt;/returns&gt;
+    Public Function GetAllKeyValuePairs() As Hashtable
+        Dim ret As New Hashtable()
+
+        For Each node As XmlNode In XmlDocument.SelectNodes( _
+            "/configuration/appSettings/add")
+
+            ret.Add(node.Attributes("key").InnerText, node.Attributes("value").InnerText)
+        Next
+
+        Return ret
+    End Function
+
+    ''' &lt;summary&gt;Sets the value of a key in the appSettings section.&lt;/summary&gt;
+    ''' &lt;param name="key"&gt;The key whose value will be set.&lt;/param&gt;
+        ''' &lt;param name="value"&gt;The value to apply to the specified key.&lt;/param&gt;
+        Public Sub SetKeyValue(ByVal key As String, ByVal value As String)
+        If key Is Nothing OrElse key = String.Empty Then
+            Throw New ApplicationException("Required key is blank or null")
+        End If
+        If value Is Nothing Then
+            Throw New ApplicationException("Required value is null")
+        End If
+        Dim node As XmlNode = GetKeyValueNode(key)
+        If node Is Nothing Then
+            Dim top As XmlNode = XmlDocument.SelectSingleNode("/configuration")
+            If top Is Nothing Then
+                top = XmlDocument.AppendChild(XmlDocument.CreateElement("configuration"))
+            End If
+            Dim app As XmlNode = top.SelectSingleNode("appSettings")
+            If app Is Nothing Then
+                app = top.AppendChild(XmlDocument.CreateElement("appSettings"))
+            End If
+            node = app.AppendChild(XmlDocument.CreateElement("add"))
+            node.Attributes.Append(XmlDocument.CreateAttribute("key")).InnerText = key
+            node.Attributes.Append(XmlDocument.CreateAttribute("value"))
+        End If
+
+        node.Attributes("value").InnerText = value
+    End Sub
+
+    ''' &lt;summary&gt;Merge element and attribute values from one xml doc to another.
+    ''' &lt;/summary&gt;
+    ''' &lt;param name="fromXdoc"&gt;The &lt;see cref="XmlDocument"&gt;XmlDocument&lt;/see&gt; to merge
+    ''' from.&lt;/param&gt;
+        ''' &lt;param name="toXdoc"&gt;The &lt;see cref="XmlDocument"&gt;XmlDocument&lt;/see&gt; to merge to.
+    ''' &lt;/param&gt;
+        ''' &lt;remarks&gt;Multiple same-named peer elements, are merged in the ordinal order they
+    ''' appear.&lt;/remarks&gt;
+    Public Shared Sub UpdateExistingElementsAndAttribs(ByVal fromXdoc As XmlDocument, _
+                                                       ByVal toXdoc As XmlDocument)
+        UpdateExistingElementsAndAttribsRecurse(fromXdoc.ChildNodes, toXdoc)
+    End Sub
+
+#End Region
+
+#Region "Private Methods"
+
+    Private Sub Load(ByVal masterConfigPath As XmlDocument, _
+                     ByVal mergeFromConfigPath As String)
+
+        Dim fromLastInstallConfigPath As String = mergeFromConfigPath
+
+        If masterConfigPath Is Nothing Then
+            Throw New ArgumentNullException("masterConfigPath")
+        End If
+
+        m_xmlDocument = New XmlDocument()
+        m_xmlDocument.LoadXml(masterConfigPath.OuterXml)
+
+        If File.Exists(mergeFromConfigPath) Then
+            Debug.WriteLine("Merging from " & mergeFromConfigPath)
+            'Merge approach:
+            ' x Use from-last-install config as base
+            ' x Merge in any non-existing keyvalue pairs from distrib-config
+            ' x Use this merged config, and leave the last-install-config file in place
+            ' for reference
+            'Merge, preserving any comments from distrib-one only
+
+            Dim reInstallConfig As New XmlDocument()
+            Try
+                reInstallConfig.Load(mergeFromConfigPath)
+            Catch ex As Exception
+                fromLastInstallConfigPath = Nothing
+                Throw New ArgumentException(("Could not read config '" & _
+                                             mergeFromConfigPath & "'"), _
+                                         "mergeFromConfigPath", ex)
+            End Try
+            UpdateExistingElementsAndAttribs(reInstallConfig, m_xmlDocument)
+        End If
+
+        m_configPath = fromLastInstallConfigPath
+    End Sub
+
+    Private Function GetKeyValueNode(ByVal key As String) As XmlNode
+        Dim nodes As XmlNodeList = XmlDocument.SelectNodes( _
+            "/configuration/appSettings/add[@key='" & key & "']")
+
+        If nodes.Count = 0 Then
+            Return Nothing
+        End If
+
+        Return nodes(nodes.Count - 1)
+        'Return last (to be compat with System.Configuration behavior)
+    End Function
+
+    Private Sub ClearSpecifiedFileAttributes(ByVal path As String, _
+                                             ByVal fileAttributes As FileAttributes)
+
+        File.SetAttributes(path, File.GetAttributes(path) And _
+                 DirectCast((DirectCast(&H7FFFFFFF, FileAttributes) - fileAttributes),  _
+                     FileAttributes))
+    End Sub
+
+    Private Shared Sub UpdateExistingElementsAndAttribsRecurse( _
+                                                    ByVal fromNodes As XmlNodeList, _
+                                                    ByVal toParentNode As XmlNode)
+        Dim iSameElement As Integer = 0
+        Dim lastElement As XmlNode = Nothing
+        For Each node As XmlNode In fromNodes
+            If node.NodeType &lt;&gt; XmlNodeType.Element OrElse _
+                String.Compare(node.Name, "clear", True) = 0 Then
+                Continue For
+            End If
+
+            If lastElement IsNot Nothing AndAlso node.Name = lastElement.Name AndAlso _
+                node.NamespaceURI = lastElement.NamespaceURI Then
+
+                iSameElement += 1
+            Else
+                iSameElement = 0
+            End If
+            lastElement = node
+
+            Dim toNode As XmlNode
+            If node.Attributes("key") IsNot Nothing Then
+                toNode = SelectSingleNodeMatchingNamespaceURI(toParentNode, node, _
+                                                              node.Attributes("key"))
+            ElseIf node.Attributes("name") IsNot Nothing Then
+                toNode = SelectSingleNodeMatchingNamespaceURI(toParentNode, node, _
+                                                              node.Attributes("name"))
+            ElseIf node.Attributes("type") IsNot Nothing Then
+                toNode = SelectSingleNodeMatchingNamespaceURI(toParentNode, node, _
+                                                              node.Attributes("type"))
+            Else
+                toNode = SelectSingleNodeMatchingNamespaceURI(toParentNode, node, _
+                                                              iSameElement)
+            End If
+
+            If toNode Is Nothing Then
+                If node Is Nothing Then
+                    Throw New ApplicationException("node == null")
+                End If
+                If node.Name Is Nothing Then
+                    Throw New ApplicationException("node.Name == null")
+                End If
+                If toParentNode Is Nothing Then
+                    Throw New ApplicationException("toParentNode == null")
+                End If
+                If toParentNode.OwnerDocument Is Nothing Then
+                    Throw New ApplicationException("toParentNode.OwnerDocument == null")
+                End If
+
+                Debug.WriteLine(("app: " & toParentNode.Name & "/") + node.Name)
+
+                If node.ParentNode.Name &lt;&gt; toParentNode.Name Then
+                    Throw New ApplicationException( _
+                        ("node.ParentNode.Name != toParentNode.Name: " & _
+                         node.ParentNode.Name & " !=") + toParentNode.Name)
+                End If
+                Try
+                    toNode = toParentNode.AppendChild( _
+                        toParentNode.OwnerDocument.CreateElement(node.Name))
+                Catch ex As Exception
+                    Throw New ApplicationException( _
+                        "ex during toNode = toParentNode.AppendChild(: " & ex.Message)
+                End Try
+            End If
+
+            'Copy element content if any
+            Dim textEl As XmlNode = GetTextElement(node)
+            If textEl IsNot Nothing Then
+                toNode.InnerText = textEl.InnerText
+            End If
+
+            'Copy attribs if any
+            For Each attrib As XmlAttribute In node.Attributes
+                Dim toAttrib As XmlAttribute = toNode.Attributes(attrib.Name)
+                If toAttrib Is Nothing Then
+                    Debug.WriteLine(("attr: " & toNode.Name & "@") + attrib.Name)
+                    toAttrib = toNode.Attributes.Append( _
+                        toNode.OwnerDocument.CreateAttribute(attrib.Name))
+                End If
+                toAttrib.InnerText = attrib.InnerText
+            Next
+            DirectCast(toNode, XmlElement).IsEmpty = Not toNode.HasChildNodes
+            'Ensure no endtag when not needed
+            UpdateExistingElementsAndAttribsRecurse(node.ChildNodes, toNode)
+        Next
+    End Sub
+
+    Private Shared Function GetTextElement(ByVal node As XmlNode) As XmlNode
+        For Each subNode As XmlNode In node.ChildNodes
+            If subNode.NodeType = XmlNodeType.Text Then
+                Return subNode
+            End If
+        Next
+
+        Return Nothing
+    End Function
+
+    Private Shared Function SelectSingleNodeMatchingNamespaceURI(ByVal node As XmlNode, _
+                                                    ByVal nodeName As XmlNode) As XmlNode
+        Return SelectSingleNodeMatchingNamespaceURI(node, nodeName, Nothing, 0)
+    End Function
+
+    Private Shared Function SelectSingleNodeMatchingNamespaceURI(ByVal node As XmlNode, _
+                    ByVal nodeName As XmlNode, ByVal iSameElement As Integer) As XmlNode
+
+        Return SelectSingleNodeMatchingNamespaceURI(node, _
+                                                    nodeName, _
+                                                    Nothing, _
+                                                    iSameElement)
+    End Function
+
+    Private Shared Function SelectSingleNodeMatchingNamespaceURI(ByVal node As XmlNode, _
+                 ByVal nodeName As XmlNode, ByVal keyAttrib As XmlAttribute) As XmlNode
+
+        Return SelectSingleNodeMatchingNamespaceURI(node, nodeName, keyAttrib, 0)
+    End Function
+
+    Private Shared Function SelectSingleNodeMatchingNamespaceURI(ByVal node As XmlNode, _
+                ByVal nodeName As XmlNode, ByVal keyAttrib As XmlAttribute, _
+                ByVal iSameElement As Integer) As XmlNode
+
+        Dim matchNode As XmlNode = Nothing
+        Dim iNodeNameElements As Integer = 0 - 1
+        For Each subNode As XmlNode In node.ChildNodes
+            If subNode.Name &lt;&gt; nodeName.Name OrElse _
+                subNode.NamespaceURI &lt;&gt; nodeName.NamespaceURI Then
+                Continue For
+            End If
+
+            iNodeNameElements += 1
+
+            If keyAttrib Is Nothing Then
+                If iNodeNameElements = iSameElement Then
+                    Return subNode
+                Else
+                    Continue For
+                End If
+            End If
+
+            If subNode.Attributes(keyAttrib.Name) IsNot Nothing AndAlso _
+                subNode.Attributes(keyAttrib.Name).InnerText = keyAttrib.InnerText Then
+                matchNode = subNode
+            ElseIf keyAttrib IsNot Nothing AndAlso keyAttrib.Name = "type" Then
+                Dim subNodeMatch As Match = _
+                    _typeParsePattern.Match(subNode.Attributes(keyAttrib.Name).InnerText)
+                Dim keyAttribMatch As Match = _
+                    _typeParsePattern.Match(keyAttrib.InnerText)
+                If subNodeMatch.Success AndAlso _
+                    keyAttribMatch.Success AndAlso _
+                    subNodeMatch.Result("$1") = keyAttribMatch.Result("$1") Then
+
+                    matchNode = subNode
+                    'Have type class match (ignoring assembly-name suffix)
+                End If
+            End If
+        Next
+
+        Return matchNode
+        'return last match if &gt; 1
+    End Function
+
+#End Region
+
+End Class</code></pre>
+
+</article>
+</body>
+</html>
