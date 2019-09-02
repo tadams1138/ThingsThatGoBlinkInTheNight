@@ -13,15 +13,21 @@
         <h1>Built a TeamCity makensis.exe output parser</h1>
     </header>
 
-    <p>This post follows a <a href="../../2011/08/2011-08-26.html">previous post</a> where I built a devenv.com output parser based on code from Wolfgang Kleinschmit.   I’ve modified the code now to parse the output from a <a href="http://nsis.sourceforge.net/Main_Page">NSIS (NullSoft Scriptable Installer System)</a> installer script compile so that TeamCity knows whether or not an installer build failed and why.  I compile this program and place it in the same directory as makensis.exe.  Then from TeamCity, I will use a command line build step that calls the compiled application instead of makensis.exe.</p>
+    <p>This post follows a <a href="../../2011/08/2011-08-26.html">previous post</a> where I built a devenv.com output
+        parser based on code from Wolfgang Kleinschmit. I’ve modified the code now to parse the output from a <a
+                href="http://nsis.sourceforge.net/Main_Page">NSIS (NullSoft Scriptable Installer System)</a> installer
+        script compile so that TeamCity knows whether or not an installer build failed and why. I compile this program
+        and place it in the same directory as makensis.exe. Then from TeamCity, I will use a command line build step
+        that calls the compiled application instead of makensis.exe.</p>
 
     <p>Sample command line build step custom script:</p>
 
     <samp>makensisbuildrunner.exe "installer.nsi"</samp>
 
-    <p>Make sure that the build machine knows the path to makensisbuildrunner.exe (perhaps put the path to the executable in the environment path variable).</p>
+    <p>Make sure that the build machine knows the path to makensisbuildrunner.exe (perhaps put the path to the
+        executable in the environment path variable).</p>
 
-    <p>Below is the code for NSIS output parser.  Just create a VB.Net console app and paste the below code into it.</p>
+    <p>Below is the code for NSIS output parser. Just create a VB.Net console app and paste the below code into it.</p>
 
     <pre class="vb"><code>Imports System.IO
 Imports System.Text

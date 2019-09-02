@@ -13,15 +13,20 @@
         <h1>Built a TeamCity VB6.exe output parser</h1>
     </header>
 
-    <p>This post follows a <a href="../../2011/08/2011-08-26.html">previous post</a> where I built a devenv.com output parser based on code from Wolfgang Kleinschmit.   I’ve modified the code now to parse the output from a Visual Basic 6 compile so that TeamCity knows whether or not a build failed and why.  I compile this program and place it in the same directory as VB6.exe.  Then from TeamCity, I will use a command line build step that calls the compiled application instead of VB6.exe.</p>
+    <p>This post follows a <a href="../../2011/08/2011-08-26.html">previous post</a> where I built a devenv.com output
+        parser based on code from Wolfgang Kleinschmit. I’ve modified the code now to parse the output from a Visual
+        Basic 6 compile so that TeamCity knows whether or not a build failed and why. I compile this program and place
+        it in the same directory as VB6.exe. Then from TeamCity, I will use a command line build step that calls the
+        compiled application instead of VB6.exe.</p>
 
     <p>Sample command line build step custom script:</p>
 
     <samp>vb6buildrunner.exe /m "project1.vbp"</samp>
 
-    <p>Make sure that the build machine knows the path to vb6buildrunner.exe (perhaps put the path to the executable in the environment path variable).</p>
+    <p>Make sure that the build machine knows the path to vb6buildrunner.exe (perhaps put the path to the executable in
+        the environment path variable).</p>
 
-    <p>Below is the code for VB6 output parser.  Just create a VB.Net console app and paste the below code into it.</p>
+    <p>Below is the code for VB6 output parser. Just create a VB.Net console app and paste the below code into it.</p>
 
     <pre class="vb"><code>Imports System.IO
 Imports System.Text
@@ -187,9 +192,15 @@ End Module</code></pre>
 <h2>Comments</h2>
 
 <p>Unknown April 8, 2014 at 1:57 AM<br>
-    Any idea on how to get vb6.exe to run as admin on Teamcity? I need to do this when compiling with binary compatibility.</p>
+    Any idea on how to get vb6.exe to run as admin on Teamcity? I need to do this when compiling with binary
+    compatibility.</p>
 
 <p>Whale Biologist - Tom Adams April 15, 2014 at 9:20 AM<br>
-    I don't recall off the top of my head, but you might try setting vb6.exe or the buildrunner to always use admin. Right click the executable in Explorer, click properties. Compatibility tab, Change Settings for all users, check Run the program as an Administrator. If that doesn't work for you there are ways to get your .net buildrunner to always start as admin. http://www.developerfusion.com/code/7987/making-a-net-app-run-on-vista-with-administrator-priviledges/ Remember to probably turn UAC off on your build machine.</p>
+    I don't recall off the top of my head, but you might try setting vb6.exe or the buildrunner to always use admin.
+    Right click the executable in Explorer, click properties. Compatibility tab, Change Settings for all users, check
+    Run the program as an Administrator. If that doesn't work for you there are ways to get your .net buildrunner to
+    always start as admin.
+    http://www.developerfusion.com/code/7987/making-a-net-app-run-on-vista-with-administrator-priviledges/ Remember to
+    probably turn UAC off on your build machine.</p>
 </body>
 </html>
