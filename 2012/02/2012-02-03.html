@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Serializing, Deserializing, Deserialization surrogates, and Deserializing data into a dynamically loaded
+        Assembly</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Serializing, Deserializing, Deserialization surrogates, and Deserializing data into a dynamically loaded
+            Assembly</h1>
+    </header>
+
+    <p>Here is some example code on how to serialize and deserialize data with some fancy tricks including using custom
+        deserialization techniques for specific data types and deserializing data types across namespaces and
+        assemblies.</p>
+
+    <p>Some time ago I had a need to transmit serialized classed as a binary array across a proprietary network
+        communication control. I was able to find an example on how to turn an ordinary .Net serializable Object into a
+        binary array and how to convert it back. That code became the Serialize and Deserialize methods in the
+        CustomSerializer class.</p>
+
+    <p>Later I had a problem where a couple of the classes that were being transmitted had been moved from one library
+        to another, and across namespaces. This precipitated the need for the
+        VersionConfigToNamespaceAssemblyObjectBinder class. Thanks to <a
+                href="http://techdigger.wordpress.com/2007/12/22/deserializing-data-into-a-dynamically-loaded-assembly/">http://techdigger.wordpress.com/2007/12/22/deserializing-data-into-a-dynamically-loaded-assembly/</a>
+        where TechDigger described how to deserialize data into a dynamically loaded Assembly, I was able to solve this
+        problem. This class was attached to the BinaryFormatter’s Binder property. In my slightly modified example, it
+        takes the name of the class to be deserialized as it is given according to the system that serialized the class,
+        and attempts to deserialize it as an identically named class but in a different namespace or assembly. While
+        certainly this could be problematic, it does solve a problem for me where because of versioning mistakes, one
+        class on the server side was in Foo1.Bar and that same class on the client side existed as Foo2.Bar. Without
+        getting into a discussion on how people should properly version their libraries, this is how I solved it.</p>
+
+    <p>Much more recently I discovered that DataSet objects when transmitted using this same serialization method across
+        time zones would alter the DateTime objects to fit the new time zone. This was a problem as we weren’t
+        transmitting the time zone information with the DataSets, so we couldn’t translate the times back. The data we
+        were collecting was more time-of-day specific than universal time specific. We were interested in data around
+        times like “rush hour” which we could define on the side where we received the data. But we couldn’t very well
+        define rush hour when 6pm on the west coast was reading as 9pm when we received it on the east coast.</p>
+
+    <p>After some investigation, we discovered that the DateTime values were received exactly as we wanted them on our
+        side and only got modified after the DataSet’s XML deserialization process turned the transmitted XML back into
+        a DataSet object. One of our developers discovered that you could create surrogate deserializers. I was able to
+        take the example from Microsoft on how to use a surrogate deserializer. <a
+                href="http://msdn.microsoft.com/en-us/library/system.runtime.serialization.surrogateselector.aspx">http://msdn.microsoft.com/en-us/library/system.runtime.serialization.surrogateselector.aspx</a>
+
+    <p>This gave me the opportunity to modify the transmitted XML before the DataSet deserializer had a chance to see
+        it. I borrowed an example from Craig Geil <a
+                href="http://www.codeproject.com/Articles/8292/How-to-fix-DateTime-values-after-NET-Xml-Serializa">http://www.codeproject.com/Articles/8292/How-to-fix-DateTime-values-after-NET-Xml-Serializa</a>
+        on how to fix the DateTime values by replacing all time zone related values found in the XML with local timezone
+        information. You can see the combination of this code in the DataSetSerializationSurrogate class.</p>
+
+    <p>Now we actually discovered an alternative, “better” solution to the DataSet DateTime problem, but I like the
+        example here on how to hijack the deserialization process. The solution settled on makes it so you can transmit
+        DataSets with DateTime values relative to their location or relative to any time zone. Look for my next post on
+        how to solve the DataSet DateTime problem without forcing every DataSet to have its DateTime values to be
+        modified on the deserialization side.</p>
+
+    <pre class="vb"><code>Imports System.IO
+Imports System.Runtime.Serialization
+Imports System.Runtime.Serialization.Formatters.Binary
+Imports System.Text.RegularExpressions
+
+Public MustInherit Class CustomSerializer
+
+    ''' &lt;summary&gt;
+    ''' Convert a serializable object to a byte array for transmission.
+    ''' &lt;/summary&gt;
+    ''' &lt;param name="value"&gt;The serializable object to convert.&lt;/param&gt;
+    ''' &lt;returns&gt;A &lt;see cref="System.Byte"&gt;Byte&lt;/see&gt; array containing all the
+    ''' information from &lt;paramref name="Obj"&gt;Obj&lt;/paramref&gt;.&lt;/returns&gt;
+    ''' &lt;remarks&gt;This makes transmitting serializable things like Exceptions really
+    ''' easy. This only works when transmitting a class from one app domain to
+    ''' another when the destination domain has an identical class to receive the
+    ''' data into as the sending domain.&lt;/remarks&gt;
+    Public Shared Function Serialize(ByVal value As Object) As Byte()
+        Dim MS As New MemoryStream
+        Dim BF As New BinaryFormatter
+        BF.AssemblyFormat = Formatters.FormatterAssemblyStyle.Simple
+        BF.Serialize(MS, value)
+        Return MS.ToArray
+    End Function
+
+    ''' &lt;summary&gt;
+    ''' Convert a byte array back into the serializable object it represented.
+    ''' &lt;/summary&gt;
+    ''' &lt;param name="serializedData"&gt;The byte array object to convert.&lt;/param&gt;
+    ''' &lt;returns&gt;A serializable &lt;see cref="System.Object"&gt;Object&lt;/see&gt; containing
+    ''' all the information from
+    ''' &lt;paramref name="SerializedData"&gt;SerializedData&lt;/paramref&gt;.&lt;/returns&gt;
+    ''' &lt;remarks&gt;Performs the opposite conversion of
+    ''' &lt;seealso cref="Serialize"&gt;Serialize&lt;/seealso&gt;.&lt;/remarks&gt;
+    Public Shared Function Deserialize(ByVal serializedData As Object) As Object
+        Dim MS As New MemoryStream(CType(serializedData, Byte()))
+        Dim BF As New BinaryFormatter
+
+        'reroute Dataset deserialization through
+        Dim ss As New SurrogateSelector
+        ss.AddSurrogate(GetType(DataSet), _
+                        New StreamingContext(StreamingContextStates.All), _
+                        New DataSetSerializationSurrogate)
+        BF.SurrogateSelector = ss
+
+        BF.AssemblyFormat = Formatters.FormatterAssemblyStyle.Simple
+        BF.Binder = New VersionConfigToNamespaceAssemblyObjectBinder
+        Return BF.Deserialize(MS)
+    End Function
+
+
+    ''' &lt;summary&gt;This class lets the serialization routines work accross
+    ''' domains&lt;/summary&gt;
+    ''' &lt;remarks&gt;This is NOT propper programming practice.  I'm bastardizing
+    ''' it, but I really badly don't want to make a dll that I have to
+    ''' maintain versions of... for now.
+    ''' &lt;para&gt;This class thanks to TechDigger:
+    ''' http://techdigger.wordpress.com/2007/12/22/deserializing-data-into-a-dynamically-loaded-assembly/
+    ''' &lt;/para&gt;&lt;/remarks&gt;
+    Private Class VersionConfigToNamespaceAssemblyObjectBinder
+        Inherits SerializationBinder
+
+
+        Public Overrides Function BindToType(ByVal assemblyName As String, _
+                                    ByVal typeName As String) As System.Type
+            Dim typeToDeserialize As Type = Nothing
+            Dim shortTypeName As String = typeName.Substring(typeName.IndexOf("."c) + 1)
+            Dim asm As Reflection.Assembly = Nothing
+
+            typeToDeserialize = Type.GetType(typeName, False, True)
+
+            If typeToDeserialize Is Nothing Then
+                asm = Reflection.Assembly.GetAssembly(Me.GetType)
+                typeToDeserialize = asm.GetType(typeName, False, True)
+            End If
+
+            If typeToDeserialize Is Nothing Then
+                typeToDeserialize = Type.GetType(Me.GetType.Namespace & "." & _
+                                                 shortTypeName, False, True)
+            End If
+
+            Try
+                If typeToDeserialize Is Nothing Then
+                    asm = Reflection.Assembly.Load(assemblyName)
+                    typeToDeserialize = asm.GetType(typeName, True, True)
+                End If
+            Catch ex As Exception
+                Trace.TraceError(String.Format( _
+                        "VersionConfigToNamespaceAssemblyObjectBinder.BindToType " & _
+                        "could not deserialize for assmbly name {0} and type name " & _
+                        "{1} : {2}", assemblyName, typeName, ex.Message))
+            End Try
+
+            Return typeToDeserialize
+        End Function
+    End Class
+
+    ''' &lt;summary&gt;The purpose of this class is to modify DateTime types encoded in XML
+    ''' that will be adjusted to match the local time zone.  This class keeps the
+    ''' DateTime values matching the original time of day regardless of timezone
+    ''' value.&lt;/summary&gt;
+    ''' &lt;remarks&gt;Based on code by Microsoft
+    ''' http://msdn.microsoft.com/en-us/library/system.runtime.serialization.surrogateselector.aspx
+    ''' &lt;/remarks&gt;
+    Private Class DataSetSerializationSurrogate
+        Implements ISerializationSurrogate
+
+        Public Sub GetObjectData1(obj As Object, _
+                                  info As SerializationInfo, _
+                                  context As StreamingContext) _
+                                  Implements ISerializationSurrogate.GetObjectData
+
+        End Sub
+
+        ''' &lt;remarks&gt;Contents based on
+        ''' http://www.codeproject.com/KB/cs/datetimeissuexmlser.aspx
+        ''' How to fix DateTime values after .NET Xml Serialization
+        ''' By Craig Geil | 15 Sep 2004&lt;/remarks&gt;
+        Public Function SetObjectData(obj As Object, info As SerializationInfo, _
+                                      context As StreamingContext, _
+                                      selector As ISurrogateSelector) As Object _
+                                  Implements ISerializationSurrogate.SetObjectData
+
+            Dim x As New DataSet
+            Dim xmlSchema As New StringReader( _
+                DirectCast(info.GetValue("XmlSchema", GetType(String)), String))
+            Dim xmlData As String = DirectCast( _
+                info.GetValue("XmlDiffGram", GetType(String)), String)
+            Dim rp As String = "(?&lt;DATE&gt;\d{4}-\d{2}-\d{2})" & _
+                               "(?&lt;TIME&gt;T\d{2}:\d{2}:\d{2}(.\d{7})?)" & _
+                               "(?&lt;HOUR&gt;[+-]\d{2})(?&lt;LAST&gt;:\d{2})"
+
+            ' Replace UTC offset value
+            xmlData = Regex.Replace(xmlData, rp, _
+                                    New MatchEvaluator(AddressOf getHourOffset))
+            Dim xmlDataReader As New StringReader(xmlData)
+            x.ReadXmlSchema(xmlSchema)
+            x.ReadXml(xmlDataReader, XmlReadMode.DiffGram)
+            Return (x)
+        End Function
+
+        ''' &lt;remarks&gt;Contents based on
+        ''' http://www.codeproject.com/KB/cs/datetimeissuexmlser.aspx
+        ''' How to fix DateTime values after .NET Xml Serialization
+        ''' By Craig Geil | 15 Sep 2004&lt;/remarks&gt;
+        Private Shared Function getHourOffset(m As Match) As String
+            ' Need to also account for Daylights Savings
+            ' Time when calculating UTC offset value
+            Dim dtLocal As DateTime = DateTime.Parse(m.Result("${DATE}"))
+            Dim dtUTC As DateTime = dtLocal.ToUniversalTime
+            Dim hourLocalOffset As Integer = _
+                CInt(DateTime.op_Subtraction(dtLocal, dtUTC).TotalHours)
+
+            Dim hourServer As Integer = Integer.Parse(m.Result("${HOUR}"))
+            'Dim newHour As String = (hourServer + _
+            '      (hourLocalOffset - hourServer)).ToString("+0#;-0#;-0#")
+            Dim newHour As String = hourLocalOffset.ToString("+0#;-0#;-0#")
+            Dim retString As String = m.Result(("${DATE}" + ("${TIME}" _
+                                    + (newHour + "${LAST}"))))
+            Return retString
+
+        End Function
+
+    End Class
+
+End Class</code></pre>
+
+</article>
+</body>
+</html>
