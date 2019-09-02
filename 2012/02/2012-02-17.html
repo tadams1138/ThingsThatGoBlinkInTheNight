@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>1 Year!</title>
+    <title>XmlConfigMerge - Merge config file settings</title>
     <link rel="stylesheet" href="../../styles.css">
     <script type="text/javascript" src="../../scripts.js"></script>
 </head>
@@ -10,10 +10,15 @@
 <div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
 <article>
     <header>
-        <h1>1 Year!</h1>
+        <h1>XmlConfigMerge - Merge config file settings</h1>
     </header>
 
-    <p>A class library I developed required various system.serviceModel settings present in the application configuration that uses the library. There needed to be a way to modify the application configuration file during library installation.  To make my life easy, I modified the <a href="http://www.codeproject.com/KB/install/XmlConfigMerge.aspx?display=Print">XmlConfigMergeclass by buc</a> to accept XDocument objects as the master configuration.  I used this to upgrade the configuration files with XML stored within a library using an Installer class:</p>
+    <p>A class library I developed required various system.serviceModel settings present in the application
+        configuration that uses the library. There needed to be a way to modify the application configuration file
+        during library installation. To make my life easy, I modified the <a
+                href="http://www.codeproject.com/KB/install/XmlConfigMerge.aspx?display=Print">XmlConfigMergeclass by
+            buc</a> to accept XDocument objects as the master configuration. I used this to upgrade the configuration
+        files with XML stored within a library using an Installer class:</p>
 
     <pre><code>Imports System.Configuration.Install
 
@@ -68,11 +73,13 @@ Public Class LibraryInstaller
 
 End Class</code></pre>
 
-    <p>Now whichever install package we use to install this library, we include the custom actions defined within the library.  The necessary XML nodes will be merged into whatever application configuration files are passed to the library Commit method in the ConfigurationFiles parameter.</p>
+    <p>Now whichever install package we use to install this library, we include the custom actions defined within the
+        library. The necessary XML nodes will be merged into whatever application configuration files are passed to the
+        library Commit method in the ConfigurationFiles parameter.</p>
 
     <p>Here’s the modified ConfigFileManager that accepts XDocument as the master configuration:</p>
 
-<pre class="vb"><code>
+    <pre class="vb"><code>
 'XmlConfigMerge - Merge config file settings
 'By buc
 'http://www.codeproject.com/KB/install/XmlConfigMerge.aspx?display=Print

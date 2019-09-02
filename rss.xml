@@ -15,19 +15,19 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
-      <title>1 Year!</title>
+      <title>Linking .Net software versions to repository versions using TeamCity</title>
+      <link>https://www.tandisoft.com/2012/02/2012-04-30T15:07.html</link>
+      <description>Linking .Net software versions to repository versions using TeamCity</description>
+    </item>
+    <item>
+      <title>XmlConfigMerge - Merge config file settings</title>
       <link>https://www.tandisoft.com/2012/02/2012-02-17.html</link>
-      <description>1 Year!</description>
+      <description>XmlConfigMerge - Merge config file settings</description>
     </item>
     <item>
       <title>1 Year!</title>
       <link>https://www.tandisoft.com/2012/02/2012-02-14T09:02.html</link>
       <description>1 Year!</description>
-    </item>
-    <item>
-      <title>Construct WCF Binding from string (XML)</title>
-      <link>https://www.tandisoft.com/2012/02/2012-02-14T09:01.html</link>
-      <description>Construct WCF Binding from string (XML)</description>
     </item>
   </channel>
 </rss>
