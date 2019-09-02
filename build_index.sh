@@ -1,6 +1,6 @@
 #!/bin/bash
 
-find . -name '[0-9]*.html' | sort -r | head -1 | while read fname; do
+find . -not -name "404.html" -name '[0-9]*.html' | sort -r | head -1 | while read fname; do
 cat > index.html << EOF
 <!DOCTYPE html>
 <html lang="en">
