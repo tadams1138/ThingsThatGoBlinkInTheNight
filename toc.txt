@@ -1,21 +1,21 @@
-<a href="/ThingsThatGoBlinkInTheNight/rss.xml" class="feed">Subscribe to the feed</a>
+<a href="/rss.xml" class="feed">Subscribe to the feed</a>
 <ul>
-<li><a href=/ThingsThatGoBlinkInTheNight/toc.html>Table of Contents</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/index.html>Home</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/About.html>About</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2019/06/2019-06-19.html>The Ruminant Pattern</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2018/05/2018-05-31.html>Rule Set Designer</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2013/09/2013-09-30.html>The 'minClientVersion' attribute is not declared</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2013/09/2013-09-07.html>The Reinvented Wheel</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2013/08/2013-08-07.html>AR Drone Remote released for Windows Phone!</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2013/08/2013-08-02.html>AR Drone Remote released for Windows 8!</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2013/05/2013-05-29.html>xkcd The Browser released!</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2013/03/2013-03-26.html>Some observations on building frameworks</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2012/04/2012-04-30T17:17.html>Linking Setup project versions to TeamCity build numbers</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2012/04/2012-04-30T15:07.html>Linking .Net software versions to repository versions using TeamCity</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2012/02/2012-02-17.html>XmlConfigMerge - Merge config file settings</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2012/02/2012-02-14T09:02.html>1 Year!</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2012/02/2012-02-14T09:01.html>Construct WCF Binding from string (XML)</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2012/02/2012-02-06.html>How to solve: DataSets change DateTime values when transmitted across time zones</a></li>
-<li><a href=/ThingsThatGoBlinkInTheNight/2012/02/2012-02-03.html>Serializing, Deserializing, Deserialization surrogates, and Deserializing data into a dynamically loaded Assembly</a></li>
+<li><a href=/toc.html>Table of Contents</a></li>
+<li><a href=/index.html>Home</a></li>
+<li><a href=/About.html>About</a></li>
+<li><a href=/2019/06/2019-06-19.html>The Ruminant Pattern</a></li>
+<li><a href=/2018/05/2018-05-31.html>Rule Set Designer</a></li>
+<li><a href=/2013/09/2013-09-30.html>The 'minClientVersion' attribute is not declared</a></li>
+<li><a href=/2013/09/2013-09-07.html>The Reinvented Wheel</a></li>
+<li><a href=/2013/08/2013-08-07.html>AR Drone Remote released for Windows Phone!</a></li>
+<li><a href=/2013/08/2013-08-02.html>AR Drone Remote released for Windows 8!</a></li>
+<li><a href=/2013/05/2013-05-29.html>xkcd The Browser released!</a></li>
+<li><a href=/2013/03/2013-03-26.html>Some observations on building frameworks</a></li>
+<li><a href=/2012/04/2012-04-30T17:17.html>Linking Setup project versions to TeamCity build numbers</a></li>
+<li><a href=/2012/04/2012-04-30T15:07.html>Linking .Net software versions to repository versions using TeamCity</a></li>
+<li><a href=/2012/02/2012-02-17.html>XmlConfigMerge - Merge config file settings</a></li>
+<li><a href=/2012/02/2012-02-14T09:02.html>1 Year!</a></li>
+<li><a href=/2012/02/2012-02-14T09:01.html>Construct WCF Binding from string (XML)</a></li>
+<li><a href=/2012/02/2012-02-06.html>How to solve: DataSets change DateTime values when transmitted across time zones</a></li>
+<li><a href=/2012/02/2012-02-03.html>Serializing, Deserializing, Deserialization surrogates, and Deserializing data into a dynamically loaded Assembly</a></li>
 </ul>
