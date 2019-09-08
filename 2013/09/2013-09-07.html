@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Reinvented Wheel</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>The Reinvented Wheel</h1>
+        <h2>A Cautionary Tale</h2>
+    </header>
+
+    <p>This is an example of code I had to delete by someone who must have thought they were being paid by the line.</p>
+
+    <pre class="csharp"><code>public static string Space(UInt32 count = 1)
+{
+    string errorMessage = "Count must be an integer greater than or equal to 1 and less than or equal to "
+                          + CommonInteraction.OverflowProtection.ToString();
+
+    if (count < 1 || count > CommonInteraction.OverflowProtection)
+        throw new ArgumentException(errorMessage);
+
+    StringBuilder spaceMaker = new StringBuilder();
+
+    for (int i = 0; i < count; i++)
+        spaceMaker.Append(((char)32).ToString());
+
+    return spaceMaker.ToString();
+}</code></pre>
+
+    <p>Clearly <code class="csharp">new string(' ', count);</code> would have sufficed in place of this entire method.
+        But it gets worse. After finding all references to this nonsense, I found that the only two references to it
+        were:</p>
+
+    <p><code class="csharp">delimiter = CommonInteraction.Space().ToCharArray()[0];</code></p>
+
+    <p>and</p>
+
+    <p><code class="csharp">((TextBox)sender).Text = ((TextBox)sender).Text.Replace(CommonInteraction.Space(),
+        string.Empty);</code></p>
+
+    <p>Will someone please tell me what is wrong with just using a literal space character in these instances?!?!</p>
+
+    <p>I don't know who you are. I don't know why you did this. If you are looking for me to approve your code for
+        check-in, I can tell you that I don't have the patience for code like this. But what I do have are a very
+        particular set of skills; skills I have acquired over a very long career. Skills that make me a nightmare for
+        people like you. If you never write code like this again, that'll be the end of it. But if you don't, I will
+        look for your code, I will find it, and I will delete it.</p>
+</article>
+</body>
+</html>

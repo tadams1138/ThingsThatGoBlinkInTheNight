@@ -32,7 +32,7 @@
     <p>A good framework does not force application development to find ways around it to meet their business needs. As
         such, framework elements should be separated into their logical parts and related to each other primarily by
         interfaces/contracts. This allows application developers to choose those parts of the framework that are most
-        useful to them, and ignore the rest without having to hack code to work around those parts they can’t use.</p>
+        useful to them, and ignore the rest without having to hack code to work around those parts they can't use.</p>
 
     <p>For example: Many apps may use some kind of shared login screen (actual example)</p>
     <ol>
@@ -51,7 +51,7 @@
         swapped out by the application developer.</p>
 
     <p>For instance, most of this company's apps use SQL server, but if a developer was tasked with working with Oracle,
-        there is no reason that code #1 and #3 in the framework shouldn’t still be usable. We should only have to write
+        there is no reason that code #1 and #3 in the framework shouldn't still be usable. We should only have to write
         some new code in the application to handle Oracle DBs, and connect it to the other two framework elements.</p>
 
     <p>If we change business rules, like we should lock Windows if the login fails enough times, then we should ideally
@@ -68,8 +68,8 @@
 
     <h2>Minimal Dependencies</h2>
     <p>Writing a framework is a balancing act. The above three classes may sound related to each other because they are
-        all login related, but each carries with it potentially several dependencies. For example, if I’m using SQL
-        server, I do not want to have to install Oracle drivers for my app to run just because I’m using the login
+        all login related, but each carries with it potentially several dependencies. For example, if I'm using SQL
+        server, I do not want to have to install Oracle drivers for my app to run just because I'm using the login
         screen. For that reason, framework components should be broken out into separate libraries, grouped based on
         common dependencies. It would be reasonable for instance to store classes for accessing an Oracle database for
         the login screen or the dictionary screen (another real example) in the same Company.Framework.Data.Oracle.dll
@@ -78,7 +78,7 @@
 
     <h2>Company participation</h2>
     <h3>Distribution</h3>
-    <p>There should be a centralized publishing location for the latest framework. I’d recommend using NuGet packages so
+    <p>There should be a centralized publishing location for the latest framework. I'd recommend using NuGet packages so
         that every development team is up to date.</p>
 
     <h3>Documentation</h3>
