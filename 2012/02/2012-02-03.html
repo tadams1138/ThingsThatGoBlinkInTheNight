@@ -28,7 +28,7 @@
         VersionConfigToNamespaceAssemblyObjectBinder class. Thanks to <a
                 href="http://techdigger.wordpress.com/2007/12/22/deserializing-data-into-a-dynamically-loaded-assembly/">http://techdigger.wordpress.com/2007/12/22/deserializing-data-into-a-dynamically-loaded-assembly/</a>
         where TechDigger described how to deserialize data into a dynamically loaded Assembly, I was able to solve this
-        problem. This class was attached to the BinaryFormatter’s Binder property. In my slightly modified example, it
+        problem. This class was attached to the BinaryFormatter's Binder property. In my slightly modified example, it
         takes the name of the class to be deserialized as it is given according to the system that serialized the class,
         and attempts to deserialize it as an identically named class but in a different namespace or assembly. While
         certainly this could be problematic, it does solve a problem for me where because of versioning mistakes, one
@@ -36,14 +36,14 @@
         getting into a discussion on how people should properly version their libraries, this is how I solved it.</p>
 
     <p>Much more recently I discovered that DataSet objects when transmitted using this same serialization method across
-        time zones would alter the DateTime objects to fit the new time zone. This was a problem as we weren’t
-        transmitting the time zone information with the DataSets, so we couldn’t translate the times back. The data we
+        time zones would alter the DateTime objects to fit the new time zone. This was a problem as we weren't
+        transmitting the time zone information with the DataSets, so we couldn't translate the times back. The data we
         were collecting was more time-of-day specific than universal time specific. We were interested in data around
-        times like “rush hour” which we could define on the side where we received the data. But we couldn’t very well
+        times like “rush hour” which we could define on the side where we received the data. But we couldn't very well
         define rush hour when 6pm on the west coast was reading as 9pm when we received it on the east coast.</p>
 
     <p>After some investigation, we discovered that the DateTime values were received exactly as we wanted them on our
-        side and only got modified after the DataSet’s XML deserialization process turned the transmitted XML back into
+        side and only got modified after the DataSet's XML deserialization process turned the transmitted XML back into
         a DataSet object. One of our developers discovered that you could create surrogate deserializers. I was able to
         take the example from Microsoft on how to use a surrogate deserializer. <a
                 href="http://msdn.microsoft.com/en-us/library/system.runtime.serialization.surrogateselector.aspx">http://msdn.microsoft.com/en-us/library/system.runtime.serialization.surrogateselector.aspx</a>

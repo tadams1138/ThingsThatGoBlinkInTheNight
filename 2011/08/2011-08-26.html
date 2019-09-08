@@ -20,16 +20,16 @@
 
     <p>So I tried running the command line build runner to call devenv.com and pass it the necessary build arguments.
         This built the entire solution including the installer packages, but it did not let me know when there was a
-        failure since it wasn’t parsing the output. You could add some redundancy by running the MSBuild or Visual
-        Studio build runners prior to the Command Line build runner to let you know when someone’s code won’t compile,
-        but that’s redundant and a giant waste of CPU.</p>
+        failure since it wasn't parsing the output. You could add some redundancy by running the MSBuild or Visual
+        Studio build runners prior to the Command Line build runner to let you know when someone's code won't compile,
+        but that's redundant and a giant waste of CPU.</p>
 
     <p>Luckily for me I stumbled upon this post by Wolfgang Kleinschmit (awesome name) <a
             href="http://youtrack.jetbrains.net/issue/TW-5385">http://youtrack.jetbrains.net/issue/TW-5385</a>. He
-        posted some C# code that would shell and parse devenv.com’s output so that TeamCity could understand when a
+        posted some C# code that would shell and parse devenv.com's output so that TeamCity could understand when a
         build failed.</p>
 
-    <p>I modified Wolfgang’s work slightly to include a few more features:</p>
+    <p>I modified Wolfgang's work slightly to include a few more features:</p>
 
     <ul>
         <li>Flags solution compilation failures as well as more errors and warnings.</li>

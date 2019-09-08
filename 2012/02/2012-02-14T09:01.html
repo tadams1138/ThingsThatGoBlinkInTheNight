@@ -67,15 +67,15 @@ End Class</code></pre>
         connection info.</p>
 
     <p>We eventually dropped this idea in favor of storing the name of the endpoint connection definition in the SQL
-        record and keeping a limited number of endpoint connection definitions in the application’s configuration file.
-        A large part of that reason was that we couldn’t figure out how to turn the endpoint XML or the Behavior XML
+        record and keeping a limited number of endpoint connection definitions in the application's configuration file.
+        A large part of that reason was that we couldn't figure out how to turn the endpoint XML or the Behavior XML
         into their respective objects without some poor hack idea like writing them to disk first and then loading them
         up as an application configuration file.</p>
 
     <p>So in the end we just pass the endpoint configuration name to the WCF client class constructor, and then reassign
         the Endpoint Address with the URI of the client we want to connect to, but maintain whatever Identity or Address
         Headers were defined in the application configuration. We also assign the username and password because you
-        can’t store those values in the application configuration file and with good reason probably.</p>
+        can't store those values in the application configuration file and with good reason probably.</p>
 
     <pre class="vb"><code>        Dim configuration As String = GetConnectionConfigNameForClient()
         Dim username As String = GetConnectionUsernameForClient()
@@ -88,7 +88,7 @@ End Class</code></pre>
         serviceClient.ClientCredentials.UserName.UserName = username
         serviceClient.ClientCredentials.UserName.Password = password</code></pre>
 
-    <p>Even though we solved it that way, I still like Jimmy Tønners solution, so I thought I’d share it.</p>
+    <p>Even though we solved it that way, I still like Jimmy Tønners solution, so I thought I'd share it.</p>
 
 </article>
 </body>

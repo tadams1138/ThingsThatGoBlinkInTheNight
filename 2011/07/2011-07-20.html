@@ -18,20 +18,20 @@
         projects.</p>
 
     <p>When I had completed my changes to the interop form, I tried to update the wrapper class that makes it possible
-        to expose the .Net form’s functionality to VB6. I clicked Tools->Generate InteropForm Wrapper Classes just as
+        to expose the .Net form's functionality to VB6. I clicked Tools->Generate InteropForm Wrapper Classes just as
         the documentation tell you to. Instead of a warm, fuzzy feeling, I got this error message:</p>
 
     <samp>Unable to generate wrapper classes since no InteropForms were found.</samp>
 
     <p>Now it had been probably a year since I last modified a .Net InteropForm project, but I know I had been
         successful at generating the wrapper classes in the past. In that time, many new projects were added to the
-        solution, and the projects had been arranged into logical Solution Folders. If you’ve never seen a Solution
+        solution, and the projects had been arranged into logical Solution Folders. If you've never seen a Solution
         Folder, right click the Solution in the Solution Explorer and click Add->New Solution Folder.</p>
 
     <p>So after many fruitless hours looking across the web for the cause of my problem, I decided to start from scratch
         and see why I might have been successful in the past. After making a fresh InteropForm project in its own
         solution (no Solution Folders or anything else), I tried to generate the InteropForm wrapper classes, and I
-        succeeded! So clearly the Interop Forms toolkit wasn’t as broken as I feared.</p>
+        succeeded! So clearly the Interop Forms toolkit wasn't as broken as I feared.</p>
 
     <p>Some testing later, I was able to conclude that the problem was a bug in the Interop Forms toolkit where it could
         not generate wrapper classes for projects that were in Solution Folders.</p>

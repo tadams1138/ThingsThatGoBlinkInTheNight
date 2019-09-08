@@ -14,13 +14,13 @@
         <h3>Without installing Dotfuscator to every engineer's system</h3>
     </header>
 
-    <p>.Net assemblies are easily deconstructed into readable code. You can use tools like Red-Gate’s Reflector (<a
+    <p>.Net assemblies are easily deconstructed into readable code. You can use tools like Red-Gate's Reflector (<a
             href="http://www.reflector.net/">http://www.reflector.net/</a>) or ILSpy (<a
             href="http://wiki.sharpdevelop.net/ILSpy.ashx">http://wiki.sharpdevelop.net/ILSpy.ashx</a>) to view the
-        contents of a .Net assembly. This poses a problem both for intellectual property reasons where we don’t want our
-        competitors to know how we did something as well as for security reasons where we don’t want a hacker to know
+        contents of a .Net assembly. This poses a problem both for intellectual property reasons where we don't want our
+        competitors to know how we did something as well as for security reasons where we don't want a hacker to know
         what our security algorithms might be. For this reason, we must obfuscate and encrypt our code. Obfuscation
-        simply makes the assembly harder to read, not impossible to read. So it acts as a deterrent to anyone we don’t
+        simply makes the assembly harder to read, not impossible to read. So it acts as a deterrent to anyone we don't
         explicitly want reading our code.</p>
 
     <h2>Our process</h2>
@@ -70,11 +70,11 @@
         </li>
         <li>Prune is off. We do not need to remove “unused” classes. Enabling this option has given me headaches in the
             past since it will remove classes not specifically mentioned in code, but rather mentioned elsewhere like in
-            the app config file. The classes may actually be in use, but the obfuscation engine just can’t tell. If a
-            class is unnecessary in a compile, remove it from the project yourself. Don’t expect the obfuscator to do
+            the app config file. The classes may actually be in use, but the obfuscation engine just can't tell. If a
+            class is unnecessary in a compile, remove it from the project yourself. Don't expect the obfuscator to do
             it.
         </li>
-        <li>“EnhancedOI:on” enables Enhanced Overload Induction. EnhancedOI enables a method’s return type or a field's
+        <li>“EnhancedOI:on” enables Enhanced Overload Induction. EnhancedOI enables a method's return type or a field's
             type to be used as a criterion in determining method or field uniqueness. This feature can allow up to 15
             percent more redundancy in method and field renames. In addition, since overloading on method return type or
             field type is typically not allowed in source languages (including C# and VB), this further hinders
@@ -84,7 +84,7 @@
             (MSIL Disassembler) from disassembling it.
         </li>
         <li>The map file options indicate where to write the map file as well as where to read the previous map file.
-            Dotfuscator reads the previous map file to find out what the assembly’s elements were renamed to so that it
+            Dotfuscator reads the previous map file to find out what the assembly's elements were renamed to so that it
             can rename them consistently. When you add new elements to rename, those elements are added and written to
             the new map file. The old map file is renamed usually. The map file helps you debug a stack trace where the
             names of methods are completely unhelpful (e.g. method a() called method b() ). Use the “Lucidator” tool to
@@ -95,7 +95,7 @@
     </ul>
     <p>You can run Dotfuscator.exe with the /? option from the command line to get a list of all available options and
         their defaults. We use the default settings for everything except the above mentioned settings. We also specify
-        prune be set to off (it’s default) only because dotfuscator appears to prune classes if I do not specify it.</p>
+        prune be set to off (it's default) only because dotfuscator appears to prune classes if I do not specify it.</p>
 
     <h2>Environment variables</h2>
     <p>Got to thank the guys at stackoverflow.com for tipping me off to this (<a
@@ -147,7 +147,7 @@
     <pre class="vb"><code>&lt;userNameAuthentication userNamePasswordValidationMode="Custom"
         customUserNamePasswordValidatorType="GCDataService.Configuration.SetConfigurationUserNameValidator,GCDataService"/&gt;</code></pre>
 
-    <p>We do not want to rename this class, but we have no problem obfuscating the class’s contents. So we write this
+    <p>We do not want to rename this class, but we have no problem obfuscating the class's contents. So we write this
         attribute above the class</p>
 
     <pre class="vb"><code>&lt;Obfuscation(ApplyToMembers:=False, Exclude:=True)&gt;</code></pre>
@@ -157,7 +157,7 @@
         Obfuscation attribute.</p>
 
     <h2>To prevent a class from having any part of it obfuscated</h2>
-    <p>You may have a class or structure that needs to be publicly exposed and you don’t want any part of it obfuscated.
+    <p>You may have a class or structure that needs to be publicly exposed and you don't want any part of it obfuscated.
         Instances of this might be WCF endpoint contracts (interfaces).</p>
 
     <p>We do not want to rename this class, no do we want to obfuscate any of its contents. So we write this attribute
