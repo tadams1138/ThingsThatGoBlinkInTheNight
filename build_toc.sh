@@ -38,7 +38,7 @@ cat >toc.txt <<EOF
 <a href="$siteRoot/rss.xml" class="feed">Subscribe to the feed</a>
 <ul>
 EOF
-write_list_item "$siteRoot" "toc.txt" 19
+write_list_item "$siteRoot" "toc.txt" 18
 cat >>toc.txt <<EOF
 </ul>
 EOF
