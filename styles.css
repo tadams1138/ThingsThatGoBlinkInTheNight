@@ -2,7 +2,6 @@ body {
     background-color: #2b2b2b;
     color: #A9B7C6;
     margin: 20px;
-    padding-right: 300px;
 }
 
 img {
@@ -32,10 +31,9 @@ h1 {
 }
 
 .navigation {
+    float: right;
     background: #3c3f41;
-    margin: 20px;
-    position:fixed;
-    right: 0;
+    margin-left: 20px;
     width: 300px;
 }
 
