@@ -15,19 +15,19 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
+      <title>The 'minClientVersion' attribute is not declared</title>
+      <link>https://www.tandisoft.com/2013/09/2013-09-30.html</link>
+      <description>The 'minClientVersion' attribute is not declared</description>
+    </item>
+    <item>
       <title>The Reinvented Wheel</title>
-      <link>https://www.tandisoft.com/2013/08/2013-09-07.html</link>
+      <link>https://www.tandisoft.com/2013/09/2013-09-07.html</link>
       <description>The Reinvented Wheel</description>
     </item>
     <item>
       <title>AR Drone Remote released for Windows Phone!</title>
       <link>https://www.tandisoft.com/2013/08/2013-08-07.html</link>
       <description>AR Drone Remote released for Windows Phone!</description>
-    </item>
-    <item>
-      <title>AR Drone Remote released for Windows 8!</title>
-      <link>https://www.tandisoft.com/2013/08/2013-08-02.html</link>
-      <description>AR Drone Remote released for Windows 8!</description>
     </item>
   </channel>
 </rss>
