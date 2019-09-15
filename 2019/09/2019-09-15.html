@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multiple constructors an anti-pattern?</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Multiple constructors an anti-pattern?</h1>
+    </header>
+    <p>I was attempting to <a href="http://wiki.c2.com/?DecoratorPattern">decorate</a> the <a
+            href="https://github.com/aspnet/HttpAbstractions/blob/2.2.0/src/Microsoft.AspNetCore.Http/HttpContextFactory.cs">HttpContextFactory</a>
+        in an AspNetCore project to to add features to the HttpContext at the time of its creation. I was able to
+        perform the decoration in the Microsoft dependency injection framework using <a
+                href="https://www.nuget.org/packages/Scrutor">Scrutor</a> in the project's Startup.cs file. It looked
+        something like this:</p>
+
+    <pre><code class="csharp">public void ConfigureServices(IServiceCollection services)
+{
+    services.Decorate&lt;IHttpContextFactory, DecoratingHttpContextFactory&gt;();
+}</code></pre>
+
+    <p>I encountered a null reference exception later though because the HttpContext property of the
+        IHttpContextAccessor was never assigned. Line 41 of the HttpContextFactory is where this assignment would have
+        been performed:</p>
+
+    <pre><code class="csharp">if (_httpContextAccessor != null)
+{
+    _httpContextAccessor.HttpContext = httpContext;
+}</code></pre>
+
+    <p>You can also see that _httpContextAccessor is assigned on line 30 in the constructor. After some debugging I was
+        able to conclude that the instantiation of the HttpContextFactory when the Microsoft dependency injection
+        framework is given <code
+                class="csharp">services.AddTransient&lt;IHttpContextFactory,HttpContextFactory&gt;();</code> on line 290
+        of the <a
+                href="https://github.com/aspnet/Hosting/blob/2.2.0/src/Microsoft.AspNetCore.Hosting/WebHostBuilder.cs">WebHostBuilder</a>
+        class is different from the way Scrutor chooses how to instantiate the class after I use the Decorate method.
+        They have different strategies for picking which class constructor to use. Scrutor appears to choose the first
+        constructor whose arguments can be supplied. Because the HttpContextFactory has two constructors, Scrutor picked
+    </p>
+
+    <pre><code class="csharp">public HttpContextFactory(IOptions&lt;FormOptions&gt; formOptions)
+    : this(formOptions, httpContextAccessor: null)
+{
+}</code></pre>
+
+    <p>The solution is fairly simple. Among many options you could just specify the constructor you want to use in the
+        dependency injection framework like:</p>
+
+    <pre><code class="csharp">public void ConfigureServices(IServiceCollection services)
+{
+    services.AddTransient&lt;IHttpContextFactory&gt;(sp =&gt;
+    {
+        var formsOptions = sp.GetService&lt;IOptions&lt;FormOptions&gt;&gt;();
+        var httpContextAccessor = sp.GetService&lt;IHttpContextAccessor&gt;();
+        var httpContextFactory = new HttpContextFactory(formsOptions, httpContextAccessor);
+        return new DecoratingHttpContextFactory(httpContextFactory);
+    });
+}</code></pre>
+
+    <p>But more interestingly, it occurred to me that since I started using <a
+            href="http://wiki.c2.com/?TestDrivenDevelopment">Test Driven Development</a>, I can't remember the last time
+        I used more than one constructor in a class that I also used in the dependency injector. Now there are some
+        qualifiers like I've made internal constructors for the purpose of instantiating a class specifically for a test
+        scenarios (I've since abandoned this practice), and I've had to include multiple constructors to help with
+        serialization when I've implemented ISerializable. But in that last example, that was done primarily for Data
+        Transfer Object (DTO) kinds of classes, classes that are more data structures than collections of behaviors. And
+        I can't recall ever injecting a class like that using a dependency injection framework.</p>
+
+    <p>Essentially since I started using TDD, my classes have a <a
+            href="https://blog.cleancoder.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html">single
+        responsibility</a> which I don't think lends to scenarios where more than one constructor would be helpful. The
+        behavior of the HttpContextFactory in particular is a good example of what I'm suggesting is a problem. How does
+        the Create method behave? It may or may not assign the newly created HttpContext to an IHttpContextAccessor
+        instance. You don't know unless you also know how it was constructed. If for some reason you didn't want to use
+        the HttpContextAccessor implementation as is certainly implied in both the HttpContextFactory implementation and
+        the AddHttpContextAccessor extension method for IServiceCollection, then perhaps you could have employed the <a
+                href="https://martinfowler.com/eaaCatalog/specialCase.html">Null Object pattern</a> for an
+        implementation of the IHttpContextAccessor. Or perhaps they chose to optionally deal with an
+        IHttpContextAccessor to maintain backwards compatibility. If that was the case then they could have done what I
+        did with the decorator patter and wrapped the original HttpContextFactory with an implementation that also
+        assigns the HttpContext to the HttpContextAccessor. They could have used the AddHttpContextAccessor extension
+        method to register this decorator class.</p>
+
+    <p>In conclusion, it appears to me that the HttpContextAccessor does too much, and its behavior is dependent on
+        which constructor you choose. Having multiple constructors, particularly if they affect behavior (is there any
+        other kind?), seems to me to defeat much of the benefit of a good dependency injection framework. I shouldn't
+        have to know which constructor will be used, and I won't have to know if there's only one constructor.</p>
+</article>
+</body>
+</html>

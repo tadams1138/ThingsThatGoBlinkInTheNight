@@ -5,6 +5,11 @@
     <link>https://www.tandisoft.com</link>
     <description>A blog for Tom Adams tech ramblings</description>
     <item>
+      <title>Multiple constructors an anti-pattern?</title>
+      <link>https://www.tandisoft.com/2019/09/2019-09-15.html</link>
+      <description>Multiple constructors an anti-pattern?</description>
+    </item>
+    <item>
       <title>The Ruminant Pattern</title>
       <link>https://www.tandisoft.com/2019/06/2019-06-19.html</link>
       <description>The Ruminant Pattern</description>
@@ -23,11 +28,6 @@
       <title>The Reinvented Wheel</title>
       <link>https://www.tandisoft.com/2013/09/2013-09-07.html</link>
       <description>The Reinvented Wheel</description>
-    </item>
-    <item>
-      <title>AR Drone Remote released for Windows Phone!</title>
-      <link>https://www.tandisoft.com/2013/08/2013-08-07.html</link>
-      <description>AR Drone Remote released for Windows Phone!</description>
     </item>
   </channel>
 </rss>
