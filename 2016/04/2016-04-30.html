@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adventures with MVC 6 - Episode II : Setting up Continuous Integration</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adventures with MVC 6 - Episode II : Setting up Continuous Integration</h1>
+    <p>For me, step two to <a href="2016-04-21.html">setting up a new solution</a> is usually to set up <a
+            href="https://en.wikipedia.org/wiki/Continuous_integration">continuous integration</a> (CI).</p>
+
+    <p>Here's my step by step guide to set up Continuous Integration (CI) with TFS Build 2015 (vNext) for DNX based
+        projects.</p>
+    <p>Defining the continuous build definition</p>
+    <ol>
+        <li>
+            Navigate to your TFS server build page (e.g. http://tfs.acme.net:8080/tfs/DefaultCollection/Acme/_build)
+        </li>
+        <li>Click the green + button near the top left of the page.</li>
+        <li>Double click Visual Studio from the list of build definition templates</li>
+    </ol>
+    <p>The default template is a good start. We will modify it with the following steps:</p>
+    <ol>
+        <li>Under the Visual Studio Build step, check the "Clean" checkbox. I like to know that we have no build
+            artifacts lying around to confuse us.
+        </li>
+        <li>Click the X to the right of the Visual Studio Test step because we are using xUnit as I said in the previous
+            post.
+        </li>
+        <li>Click the X to the right of the Index Sources and Publish Symbols. We don't need to persist anything during
+            a continuous build.
+        </li>
+        <li>Click the X to the right of the Publish Build. Again we don't need to persist anything during a continuous
+            build.
+        </li>
+        <li>It should look like this now:</li>
+    </ol>
+
+    <img src="screenshot%201.png" alt="Build Definition Build">
+
+    <ol>
+        <li>Click the Repository tab</li>
+        <li>Change Clean to 'true'. I like to build with no artifacts lying around to confuse things.</li>
+        <li>Under Mappings, set the Map field to the TFS path to the solution. Remove any unnecessary mappings.</li>
+        <li>It should look like this now:</li>
+    </ol>
+
+    <img src="screenshot%202.png" alt="Build Definition Repository">
+
+    <ol>
+        <li>Click the Triggers tab</li>
+        <li>Check the Continuous integration (CI). This guarantees that the project will build every time there is a
+            code check-in.
+        </li>
+        <li>Add the path to the solution. It should look like this:</li>
+    </ol>
+
+    <img src="screenshot%203.png" alt="Build Definition Triggers">
+
+    <ol>
+        <li>Click save.</li>
+        <li>Type a descriptive name. I use the following pattern {Project Name}.{TFS Branch}.{Build Definition Purpose}.
+            This helps me find the build definitions easier when I have many of them.
+        </li>
+    </ol>
+
+    <img src="screenshot%204.png" alt="Build Definition Save">
+
+    <ol>
+        <li>Click Ok.</li>
+        <li>Click Queue build… and watch the build log fly by.</li>
+    </ol>
+    <p>You should get the following build failure if the solution contains a DNX project like I had in my previous
+        post:</p>
+    <pre><samp>    Error NU1009: The expected lock file doesn't exist. Please run "dnu restore" to generate a new lock file.</samp></pre>
+    <p>So we need to add a build step.</p>
+    <ol>
+        <li>Add a folder to TFS, call it BuildProcess</li>
+        <li>Add a PowerShell script to that folder called PrebuildDnxProjects.ps1</li>
+        <li>The contents of that file should resemble the script I read about here:</li>
+    </ol>
+
+    <pre><code class="powershell"> param (
+     [string]$path = $(throw "-path is required.")
+  )
+
+ Write-Output "Pre-building DNX projects using path: $path"
+
+  # bootstrap DNVM into this session.
+ &amp;{$Branch='dev';iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.ps1'))}
+
+ Get-ChildItem -Path "$path" -Filter "global.json" -Recurse | ForEach-Object {
+
+  Write-Output "Loading '$($_.FullName)' to determine the 'latest' DNX version"
+
+  # load up the global.json so we can find the DNX version
+  $globalJson = Get-Content -Path $_.FullName -Raw -ErrorAction Ignore | ConvertFrom-Json -ErrorAction Ignore
+
+  if($globalJson)
+  {
+   $dnxVersion = $globalJson.sdk.version
+  }
+  else
+  {
+   Write-Warning "Unable to locate global.json to determine using 'latest'"
+   $dnxVersion = "latest"
+  }
+
+  # install DNX
+  # only installs the default (x86, clr) runtime of the framework.
+  # If you need additional architectures or runtimes you should add additional calls
+  # ex: &amp; $env:USERPROFILE\.dnx\bin\dnvm install $dnxVersion -r coreclr
+  &amp; $env:USERPROFILE\.dnx\bin\dnvm install $dnxVersion -Persistent
+
+   # run DNU restore on all project.json files in the src folder including 2&gt;1 to redirect stderr to stdout for badly behaved tools
+  Get-ChildItem -Path $path -Filter project.json -Recurse | ForEach-Object {
+   Write-Output "Preparing to call dnu restore on '$($_.FullName)'"
+   dnu restore $_.FullName 2&gt;1
+  }
+}</code></pre>
+
+
+    <ol>
+        <li>Click the build definition title link (e.g. Acme.Disgronifier.Main.Continuous)</li>
+        <li>Click Edit</li>
+        <li>Click Add build step…</li>
+        <li>Click Utility and click Add to the right of PowerShell</li>
+        <li>Click Close</li>
+        <li>Drag the new PowerShell build step above the Visual Studio Build step</li>
+        <li>Set the Script filename to the file location in TFS (e.g. $/Acme/BuildProcess/PrebuildDnxProjects.ps1)
+        </li>
+        <li>Set the arguments to <strong>-path "$(Build.SourcesDirectory)"</strong></li>
+        <li>It should look like:</li>
+    </ol>
+
+    <img src="screenshot%208.png" alt="Build Definition Build">
+
+    <ol>
+        <li>Click on the Repository tab</li>
+        <li>Add a mapping to the BuildProcess folder (e.g. $/Acme/BuildProcess). This way the build agent can
+            download the PowerShell scripts
+        </li>
+        <li>Click Save</li>
+        <li>Click Queue build… and confirm that the build succeeds.</li>
+    </ol>
+    <p>At this point we should have a successful build assuming that the code compiles. I also want the tests to
+        be run as well though. Because I am using xUnit tests as described in the previous post, this is a bit
+        trickier. Thankfully, <a
+                href="https://fluentbytes.com/running-xunit-test-with-asp-net-dnx-and-tfs-2015-build/">Marcel de
+            Vries has a great post</a> on how to do just this.</p>
+    <ol>
+        <li>Add a PowerShell script to the BuildProcess folder called RunDnxTests.ps1</li>
+        <li>The contents of that file should resemble the following:</li>
+    </ol>
+    <pre><code class="powershell"> param (
+     [string]$path = $(throw "-path is required."),
+  [string]$testFolderPattern = "*TEST*",
+  [string]$folderExcludePattern = "*HELPER*"
+  )
+
+ Write-Output "Running tests in path '$path'"
+
+ $testResultsFileName = "testresults.xml"
+ $transformedTestResultsPrefix = "TEST-"
+ $xsl = "$PSScriptRoot\NUnitXml.xslt" # this can transform xunit xml results to nunit xml format
+ Write-Output "Loading XSLT '$xsl'"
+ $xslt = New-Object System.Xml.Xsl.XslCompiledTransform;
+ $xslt.Load($xsl);
+ Write-Output "Completed Loading XSLT"
+
+ # load dnvm so that the dnx command will work
+ dnvm upgrade
+
+ #remember the oginigal path
+ $originalPath = Get-Location
+
+ Get-ChildItem "$path" -Recurse -Filter "$testFolderPattern" -Exclude "$folderExcludePattern" -Directory | ForEach-Object {
+  Get-ChildItem "$($_.FullName)" -Filter "project.json" | ForEach-Object {
+   $currentPath = $_.Directory
+
+   # set the current path so that test output is written to the same folder as the project
+   Write-Output "Setting the current path to $currentPath"
+   Set-Location -Path "$currentPath"
+
+   Write-Output "Running tests for project '$($_.FullName)'"
+   dnx --project "$_" test -xml $testResultsFileName
+
+   $testResultsInput = "$currentPath\$testResultsFileName"
+   $testResultsOutput = "$currentPath\$transformedTestResultsPrefix$testResultsFileName"
+   Write-Output "Transforming test results '$testResultsInput' to '$testResultsOutput'"
+   $xslt.Transform("$testResultsInput", "$testResultsOutput");
+  }
+ }
+
+ #reset the current path back to the path before the loop
+ Set-Location "$originalPath"
+ Write-Output "Current path reset to $currentPath"
+
+Write-Output "Test run on '$path' completed."</code></pre>
+
+    <ol>
+        <li>Add another file to the same BuildProcess folder. Call this file NUnitXml.xslt</li>
+        <li>The contents of that file should be:</li>
+    </ol>
+
+    <pre><code class="xml"> &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+ &lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+   &lt;xsl:output cdata-section-elements="message stack-trace"/&gt;
+
+   &lt;xsl:template match="/"&gt;
+     &lt;xsl:apply-templates/&gt;
+   &lt;/xsl:template&gt;
+
+   &lt;xsl:template match="assemblies"&gt;
+     &lt;test-results name="Test results" errors="0" inconclusive="0" ignored="0" invalid="0" not-run="0"&gt;
+       &lt;xsl:attribute name="date"&gt;
+         &lt;xsl:value-of select="assembly[1]/@run-date"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="time"&gt;
+         &lt;xsl:value-of select="assembly[1]/@run-time"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="total"&gt;
+         &lt;xsl:value-of select="sum(assembly/@total)"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="failures"&gt;
+         &lt;xsl:value-of select="sum(assembly/@failed)"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="skipped"&gt;
+         &lt;xsl:value-of select="sum(assembly/@skipped)"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;environment os-version="unknown" platform="unknown" cwd="unknown" machine-name="unknown" user="unknown" user-domain="unknown"&gt;
+         &lt;xsl:attribute name="nunit-version"&gt;
+           &lt;xsl:value-of select="assembly[1]/@test-framework"/&gt;
+         &lt;/xsl:attribute&gt;
+         &lt;xsl:attribute name="clr-version"&gt;
+           &lt;xsl:value-of select="assembly[1]/@environment"/&gt;
+         &lt;/xsl:attribute&gt;
+       &lt;/environment&gt;
+       &lt;culture-info current-culture="unknown" current-uiculture="unknown" /&gt;
+       &lt;test-suite type="Assemblies" name="xUnit.net Tests" executed="True"&gt;
+         &lt;xsl:attribute name="success"&gt;
+           &lt;xsl:if test="sum(assembly/@failed) &gt; 0"&gt;False&lt;/xsl:if&gt;
+           &lt;xsl:if test="sum(assembly/@failed) = 0"&gt;True&lt;/xsl:if&gt;
+         &lt;/xsl:attribute&gt;
+         &lt;xsl:attribute name="result"&gt;
+           &lt;xsl:if test="sum(assembly/@failed) &gt; 0"&gt;Failure&lt;/xsl:if&gt;
+           &lt;xsl:if test="sum(assembly/@failed) = 0"&gt;Success&lt;/xsl:if&gt;
+         &lt;/xsl:attribute&gt;
+         &lt;xsl:attribute name="time"&gt;
+           &lt;xsl:value-of select="sum(assembly/@time)"/&gt;
+         &lt;/xsl:attribute&gt;
+         &lt;results&gt;
+           &lt;xsl:apply-templates select="assembly"/&gt;
+         &lt;/results&gt;
+       &lt;/test-suite&gt;
+     &lt;/test-results&gt;
+   &lt;/xsl:template&gt;
+
+   &lt;xsl:template match="assembly"&gt;
+     &lt;test-suite type="Assembly" executed="True"&gt;
+       &lt;xsl:attribute name="name"&gt;
+         &lt;xsl:value-of select="@name"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="result"&gt;
+         &lt;xsl:if test="@failed &gt; 0"&gt;Failure&lt;/xsl:if&gt;
+         &lt;xsl:if test="@failed = 0"&gt;Success&lt;/xsl:if&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="success"&gt;
+         &lt;xsl:if test="@failed &gt; 0"&gt;False&lt;/xsl:if&gt;
+         &lt;xsl:if test="@failed = 0"&gt;True&lt;/xsl:if&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="time"&gt;
+         &lt;xsl:value-of select="@time"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;results&gt;
+         &lt;xsl:apply-templates select="collection"/&gt;
+       &lt;/results&gt;
+     &lt;/test-suite&gt;
+   &lt;/xsl:template&gt;
+
+   &lt;xsl:template match="collection"&gt;
+     &lt;test-suite type="TestCollection" executed="True"&gt;
+       &lt;xsl:attribute name="name"&gt;
+         &lt;xsl:value-of select="@name"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="result"&gt;
+         &lt;xsl:if test="@failed &gt; 0"&gt;Failure&lt;/xsl:if&gt;
+         &lt;xsl:if test="@failed = 0"&gt;Success&lt;/xsl:if&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="success"&gt;
+         &lt;xsl:if test="@failed &gt; 0"&gt;False&lt;/xsl:if&gt;
+         &lt;xsl:if test="@failed = 0"&gt;True&lt;/xsl:if&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="time"&gt;
+         &lt;xsl:value-of select="@time"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:if test="failure"&gt;
+         &lt;xsl:copy-of select="failure"/&gt;
+       &lt;/xsl:if&gt;
+       &lt;xsl:if test="reason"&gt;
+         &lt;reason&gt;
+           &lt;xsl:apply-templates select="reason"/&gt;
+         &lt;/reason&gt;
+       &lt;/xsl:if&gt;
+       &lt;results&gt;
+         &lt;xsl:apply-templates select="test"/&gt;
+       &lt;/results&gt;
+     &lt;/test-suite&gt;
+   &lt;/xsl:template&gt;
+
+   &lt;xsl:template match="test"&gt;
+     &lt;test-case&gt;
+       &lt;xsl:attribute name="name"&gt;
+         &lt;xsl:value-of select="@name"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="executed"&gt;
+         &lt;xsl:if test="@result='Skip'"&gt;False&lt;/xsl:if&gt;
+         &lt;xsl:if test="@result!='Skip'"&gt;True&lt;/xsl:if&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="result"&gt;
+         &lt;xsl:if test="@result='Fail'"&gt;Failure&lt;/xsl:if&gt;
+         &lt;xsl:if test="@result='Pass'"&gt;Success&lt;/xsl:if&gt;
+         &lt;xsl:if test="@result='Skip'"&gt;Skipped&lt;/xsl:if&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:if test="@result!='Skip'"&gt;
+         &lt;xsl:attribute name="success"&gt;
+           &lt;xsl:if test="@result='Fail'"&gt;False&lt;/xsl:if&gt;
+           &lt;xsl:if test="@result='Pass'"&gt;True&lt;/xsl:if&gt;
+         &lt;/xsl:attribute&gt;
+       &lt;/xsl:if&gt;
+       &lt;xsl:if test="@time"&gt;
+         &lt;xsl:attribute name="time"&gt;
+           &lt;xsl:value-of select="@time"/&gt;
+         &lt;/xsl:attribute&gt;
+       &lt;/xsl:if&gt;
+       &lt;xsl:if test="reason"&gt;
+         &lt;reason&gt;
+           &lt;message&gt;
+             &lt;xsl:apply-templates select="reason"/&gt;
+           &lt;/message&gt;
+         &lt;/reason&gt;
+       &lt;/xsl:if&gt;
+       &lt;xsl:apply-templates select="traits"/&gt;
+       &lt;xsl:apply-templates select="failure"/&gt;
+     &lt;/test-case&gt;
+   &lt;/xsl:template&gt;
+
+   &lt;xsl:template match="traits"&gt;
+     &lt;properties&gt;
+       &lt;xsl:apply-templates select="trait"/&gt;
+     &lt;/properties&gt;
+   &lt;/xsl:template&gt;
+
+   &lt;xsl:template match="trait"&gt;
+     &lt;property&gt;
+       &lt;xsl:attribute name="name"&gt;
+         &lt;xsl:value-of select="@name"/&gt;
+       &lt;/xsl:attribute&gt;
+       &lt;xsl:attribute name="value"&gt;
+         &lt;xsl:value-of select="@value"/&gt;
+       &lt;/xsl:attribute&gt;
+     &lt;/property&gt;
+   &lt;/xsl:template&gt;
+
+   &lt;xsl:template match="failure"&gt;
+     &lt;failure&gt;
+       &lt;xsl:copy-of select="node()"/&gt;
+     &lt;/failure&gt;
+   &lt;/xsl:template&gt;
+
+
+&lt;/xsl:stylesheet&gt;</code></pre>
+
+
+    <ol>
+        <li>Click the build definition title link (e.g. Acme.Disgronifier.Main.Continuous)</li>
+        <li>Click Edit</li>
+        <li>Click Add build step…</li>
+        <li>Click Utility and click Add to the right of PowerShell</li>
+        <li>Click Test and click Add to the right of Publish Test Results</li>
+        <li>Click Close</li>
+        <li>Select the new PowerShell build step and set the Script filename to the new PowerShell script that
+            was just added (e.g. $/Acme/BuildProcess/RunDnxTests.ps1)
+        </li>
+        <li>Set Arguments to -path "$(Build.SourcesDirectory)"</li>
+        <li>Check Continue on Error</li>
+        <li>Click the Publish Test Results build step</li>
+        <li>Set Test Result Format to NUnit</li>
+        <li>Check the Merge Test Results checkbox</li>
+        <li>Click Save</li>
+        <li>Click Queue build…</li>
+    </ol>
+    <p>At this point the build should complete and produce test results that can be seen on the build page.
+        It should look something like this:</p>
+
+    <img src="screenshot%206.png" alt="Rest results">
+
+    <p>If you click the link bellow Test results, you can get an even more detailed report.</p>
+
+
+    <p>Finally, the last step is to turn this new build definition into a template.</p>
+
+    <img src="screenshot%207.png" alt="Test summary">
+
+    <ol>
+        <li>Navigate to your TFS server build page (e.g.
+            http://tfs.acme.net:8080/tfs/DefaultCollection/Acme/_build)
+        </li>
+        <li>Right click the previously made build definition (e.g. Acme.Disgronifier.Main.Continuous)</li>
+        <li>Click Save as template…</li>
+        <li>Name it Project.Branch.Continuous</li>
+        <li>Click OK</li>
+    </ol>
+    <p>Now next time you create a solution that needs a continuous build definition</p>
+    <ol>
+        <li>Navigate to your TFS server build page (e.g.
+            http://tfs.acme.net:8080/tfs/DefaultCollection/Acme/_build)
+        </li>
+        <li>Click the green + button near the top left of the page.</li>
+        <li>Click Custom</li>
+        <li>Double click Project.Branch.Continuous</li>
+        <li>Click on Repository</li>
+        <li>Change Clean to 'true'.</li>
+        <li>Under Mappings, set the Map field to the TFS path to the solution. Remove any unnecessary
+            mappings.
+        </li>
+        <li>Click the Triggers tab</li>
+        <li>Set the path to the solution.</li>
+        <li>Click Save</li>
+        <li>Name the new build definition based on the naming pattern {Project Name}.{Branch}.{Continuous}
+        </li>
+        <li>Click OK</li>
+    </ol>
+    <p>At some later post I'll detail step by step how to set up alerts for when builds fail.</p>
+</article>
+</body>
+</html>
