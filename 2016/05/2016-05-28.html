@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adventures with MVC 6 - Episode IV : Synchronizing Package Versions in a Solution</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adventures with MVC 6 - Episode IV : Synchronizing Package Versions in a Solution</h1>
+    <p>One of the more repetitive tasks I've run into is synchronizing the package versions of NuGet packages I'm
+        building in a client-server solution. I like to keep my Acme.Disgronifier.Client and Acme.Disgronifier.Common
+        packages versions in sync not just because the client package references the common package, but also because it
+        just makes it easier to track when it's out in production. Whenever I rev one package version number, I have to
+        go to the other package version number to rev it as well, and I frequently run into visual studio hanging while
+        it tries to communicate with our NuGet server to verify what versions are available. I also forget to update the
+        package references in the test and api projects, and this usually results in a warning that looks something
+        like: </p>
+    <p><samp>Dependency specified was Acme.Disgronifier.Common >= 1.0.0-* but ended up with Acme.Disgronifier.Common
+        1.0.1</samp></p>
+    <p>I eventually broke down and wrote a script to sync all these versions for me.</p>
+    <p>Install PowerShell tools for Visual Studio 2015</p>
+    <ul>
+        <li>In VS2015, click Tools->Extensions and Updates…</li>
+        <li>Under Online, search for PowerShell Tools for Visual Studio 2015 by Adam Driscoll</li>
+        <li>Install it.</li>
+    </ul>
+    <p>Add a PowerShell script to the solution</p>
+    <ul>
+        <li>Right click that part of the solution where you want to add a PowerShell script project, click Add->New
+            Project... I chose to put the new project under the '1.0' solution folder that I set up in my <a
+                    href="../04/2016-04-21.html">previous post</a>.
+        </li>
+    </ul>
+    <img src="screenshot%204.png" alt="Add New Project">
+    <ul>
+        <li>Select PowerShell Script Project, verify the location and name of the PowerShell script project you want to
+            add, and click OK.
+        </li>
+        <li>Rename Script.ps1 to SyncClientVersions.ps1</li>
+        <li>Add the following to the script</li>
+    </ul>
+    <pre><code>   #
+   # Define file locations
+   #
+   $Acme_Disgronifier_Api_Project_FilePath = "$PSScriptRoot\..\src\Acme.Disgronifier.Api\project.json"
+   $Acme_Disgronifier_Common_Project_FilePath = "$PSScriptRoot\..\src\Acme.Disgronifier.Common\project.json"
+   $Acme_Disgronifier_Client_Project_FilePath = "$PSScriptRoot\..\src\Acme.Disgronifier.Client\project.json"
+   $Acme_Disgronifier_Client_Tests_Project_FilePath = "$PSScriptRoot\..\test\Acme.Disgronifier.Client.Tests\project.json"
+
+   #
+   # Load project files
+   #
+
+   Write-Output "Loading project files..."
+
+   $Acme_Disgronifier_Api_Project = Get-Content -Path $Acme_Disgronifier_Api_Project_FilePath -Raw -ErrorAction Ignore
+   $Acme_Disgronifier_Common_Project = Get-Content -Path $Acme_Disgronifier_Common_Project_FilePath -Raw -ErrorAction Ignore
+   $Acme_Disgronifier_Client_Project = Get-Content -Path $Acme_Disgronifier_Client_Project_FilePath -Raw -ErrorAction Ignore
+   $Acme_Disgronifier_Client_Tests_Project = Get-Content -Path $Acme_Disgronifier_Client_Tests_Project_FilePath -Raw -ErrorAction Ignore
+
+   #
+   # Get highest client/common version number
+   #
+
+   Write-Output "Determining highest version number..."
+
+   $Acme_Disgronifier_Common_Project_Version = [version]($Acme_Disgronifier_Common_Project | ConvertFrom-Json -ErrorAction Ignore).version.Replace("-*", "")
+   $Acme_Disgronifier_Client_Project_Version = [version]($Acme_Disgronifier_Client_Project | ConvertFrom-Json -ErrorAction Ignore).version.Replace("-*", "")
+
+   if ($Acme_Disgronifier_Common_Project_Version.CompareTo($Acme_Disgronifier_Client_Project_Version) -gt 0)
+   {
+       $highestVersion = $Acme_Disgronifier_Common_Project_Version
+   }
+   else
+   {
+       $highestVersion = $Acme_Disgronifier_Client_Project_Version
+   }
+
+   $highestVersionString = $highestVersion.ToString()
+
+   #
+   # Assign the highest version number everywhere it needs to be
+   #
+
+   Write-Output "Replacing version numbers..."
+
+   $dependenciesRegexFindPattern = "(""Acme.Disgronifier.(Common|Client)""\s*:\s*"").*"""
+   $versionRegexFindPattern = "(""version""\s*:\s*"").*"""
+   $regexReplacePattern = '${1}' + $highestVersionString + '"'
+
+   $Acme_Disgronifier_Api_Project = $Acme_Disgronifier_Api_Project -replace $dependenciesRegexFindPattern, $regexReplacePattern
+
+   $Acme_Disgronifier_Common_Project = $Acme_Disgronifier_Common_Project -replace $versionRegexFindPattern, $regexReplacePattern
+
+   $Acme_Disgronifier_Client_Project = $Acme_Disgronifier_Client_Project -replace $versionRegexFindPattern, $regexReplacePattern
+   $Acme_Disgronifier_Client_Project = $Acme_Disgronifier_Client_Project -replace $dependenciesRegexFindPattern, $regexReplacePattern
+
+   $Acme_Disgronifier_Client_Tests_Project = $Acme_Disgronifier_Client_Tests_Project -replace $dependenciesRegexFindPattern, $regexReplacePattern
+
+   #
+   # Save back to disk
+   #
+
+   Write-Output "Saving changes..."
+
+   # Use WriteAllText because other methods like Set-Content append an unnecessary line break at the end of the
+   # file
+   [io.file]::WriteAllText($Acme_Disgronifier_Api_Project_FilePath, $Acme_Disgronifier_Api_Project)
+   [io.file]::WriteAllText($Acme_Disgronifier_Common_Project_FilePath, $Acme_Disgronifier_Common_Project)
+   [io.file]::WriteAllText($Acme_Disgronifier_Client_Project_FilePath, $Acme_Disgronifier_Client_Project)
+   [io.file]::WriteAllText($Acme_Disgronifier_Client_Tests_Project_FilePath, $Acme_Disgronifier_Client_Tests_Project)
+
+   Write-Output "Running dnu restore"
+   dnu restore "$PSScriptRoot\.."
+
+   Write-Output "Sync completed"</code></pre>
+    <p>Now when I increment the version number in either the Acme.Disgronifier.Client or Acme.Disgronifier.Common
+        projects, I only have to right click the SyncClientVersions.ps1 file and click <strong>Execute as
+            Script</strong> to get all project.json references properly synchronized as well as keep the
+        Acme.Disgronifier.Client and Acme.Disgronifier.Common package version numbers in sync.</p>
+</article>
+</body>
+</html>
