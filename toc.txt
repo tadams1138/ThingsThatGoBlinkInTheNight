@@ -10,6 +10,7 @@
 <li><a href=/2016/05/2016-05-28.html>Adventures with MVC 6 - Episode IV : Synchronizing Package Versions in a Solution</a></li>
 <li><a href=/2016/05/2016-05-21.html>Adding Dnu Restore to Visual Studio</a></li>
 <li><a href=/2016/05/2016-05-14.html>Adding Open Command Prompt to Visual Studio</a></li>
+<li><a href=/2016/05/2016-05-07.html>Adventures with MVC 6 - Episode III : Scaffolding the EF7 Class Library</a></li>
 <li><a href=/2014/05/2014-05-06.html>Parrot releases AR.FreeFlight for Windows 8</a></li>
 <li><a href=/2014/02/2014-02-12.html>New AR Drone Remote released to Windows Phone 8 and Windows 8.1!</a></li>
 <li><a href=/2013/09/2013-09-30.html>The 'minClientVersion' attribute is not declared</a></li>
@@ -17,5 +18,4 @@
 <li><a href=/2013/08/2013-08-07.html>AR Drone Remote released for Windows Phone!</a></li>
 <li><a href=/2013/08/2013-08-02.html>AR Drone Remote released for Windows 8!</a></li>
 <li><a href=/2013/05/2013-05-29.html>xkcd The Browser released!</a></li>
-<li><a href=/2013/03/2013-03-26.html>Some observations on building frameworks</a></li>
 </ul>
