@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adding Dnu Restore to Visual Studio</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adding Dnu Restore to Visual Studio</h1>
+    <p>I frequently get the following error when modifying package versions within my solution:</p>
+
+    <p><samp>Dependencies in project.json were modified. Please run "dnu restore" to generate a new lock file.</samp>
+    </p>
+
+    <p>To resolve this quickly, you could just restore all NuGet packages in your solution. In case you hadn't noticed,
+        right clicking your solution in Solution Explorer and clicking "Restore NuGet Packages" doesn't seem to do
+        anything in VS2015. So instead I added a shortcut-key friendly way to restore all NuGet packages in my
+        solution.</p>
+
+    <p>In Visual Studio, click Tools->External Tools…</p>
+
+    <p>Click Add and enter the following information:</p>
+
+    <img src="screenshot%203.png" alt="External Tools">
+
+    <p>Any character in the Title field that follows the '&amp;' character will serve as the "shortcut key". You may have to
+        find one not already in use in the Tools menu though, and that might be tough. Good luck. I couldn't find one
+        that wasn't already in use. The way I usually discover what is or is not in use, I hit 'Alt' and then 't' in
+        Visual studio and see what letters in the tools menu are underlined. Anything underlined is already in use.
+        Process of elimination…</p>
+
+
+    <p>Anyhow, after you click OK on the dialog, you should now be able to restore all NuGet packages in the solution by
+        clicking on the Tools->Dnu Restore.</p>
+</article>
+</body>
+</html>

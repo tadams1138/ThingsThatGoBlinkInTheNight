@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adventures with MVC 6 - Episode III : Scaffolding the EF7 Class Library</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adventures with MVC 6 - Episode III : Scaffolding the EF7 Class Library</h1>
+    <p>Many of the projects I'm tasked with use an existing SQL Server database. I've developed a pretty standard set of
+        steps now when I need to set up the Entity Framework 7 (EF7) libraries the rest of my solution will use. See the
+        <a href="../04/2016-04-21.html">previous post</a> about setting up the solution for more context.
+    <p>
+
+    <p>After I've added my Class Library (Package) project, Acme.Disgronifier.EF, I add in the necessary dependencies
+        and commands to the project.json file. All I'm doing is typing in the project.json file, there is no magic to
+        this step. It should look like this in the end. My changes from the originally generated file are
+        highlighted.</p>
+
+    <img src="screenshot%201.png" alt="Code">
+
+    <p>I removed any frameworks except the dnx451 framework. We will want this one over the net451 framework so that we
+        can run dnx related commands against this project from the command line. We removed the dotnet5.4 framework
+        reference entirely because, like I said before, it won't gain us anything in our solution yet. It's more of a
+        hassle since so many of our dependencies just don't support it yet.</p>
+
+    <p>I added the following project dependencies which are necessary to help scaffold out entities from an existing SQL
+        Server database:</p>
+
+    <pre>    "EntityFramework.Commands": "7.0.0-rc1-final",
+    "EntityFramework.Core": "7.0.0-rc1-final",
+    "EntityFramework.MicrosoftSqlServer": "7.0.0-rc1-final",
+    "EntityFramework.MicrosoftSqlServer.Design": "7.0.0-rc1-final"</pre>
+
+    <p>Finally I add in a command that we can reference from the command line on this project: </p>
+
+    <pre>   "ef": "EntityFramework.Commands"</pre>
+
+    <p>Next I open a command prompt window and navigate to the same folder as the project.json file. I run the following from the command line: </p>
+
+    <pre>   dnx ef dbcontext scaffold "Data Source=<strong>SERVERNAME</strong>;Initial Catalog=<strong>DATABASENAME</strong>;Integrated Security=True" EntityFramework.MicrosoftSqlServer --table "dbo.Table1" --table "dbo.Table2" --context "DisgronifierContext" --dataAnnotations --outputDir "Models"</pre>
+
+    <p>Be sure to replace the quoted string following "scaffold" with whatever connection string you need. You can scaffold as many tables as you like in one shot. I recommend including all related tables so that EF7 can model the appropriate relationships.</p>
+</article>
+</body>
+</html>

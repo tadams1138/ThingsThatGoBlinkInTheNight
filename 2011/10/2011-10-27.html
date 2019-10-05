@@ -58,7 +58,7 @@ Module Program
                     String.Compare(a, "/m", True) = 0 Then
 
                     projectName = My.Application.CommandLineArgs(i + 1)
-                    logFile = projectName & ".makelog"
+                    logFile = projectName &amp; ".makelog"
                 End If
 
             Next
@@ -71,15 +71,15 @@ Module Program
 
             If File.Exists(logFile) Then
                 File.Delete(logFile)
-                logFile &= "1"
-            ElseIf File.Exists(logFile & "1") Then
-                File.Delete(logFile & "1")
+                logFile &amp;= "1"
+            ElseIf File.Exists(logFile &amp; "1") Then
+                File.Delete(logFile &amp; "1")
             End If
 
             Dim pattern As String = String.Format("^[""]?({0})[""]?\s*", Environment.GetCommandLineArgs()(0).Replace("\", "\\"))
             Dim rgx As New Regex(pattern)
             Dim argumentsOnly As String = rgx.Replace(Environment.CommandLine, String.Empty)
-            argumentsOnly &= String.Format(" /out ""{0}""", logFile)
+            argumentsOnly &amp;= String.Format(" /out ""{0}""", logFile)
 
             Dim psi As New ProcessStartInfo("vb6.exe")
             psi.Arguments = argumentsOnly
@@ -175,7 +175,7 @@ Module Program
         Dim sb As New StringBuilder
 
         For Each c As Char In line
-            If ("'|]" & Environment.NewLine).IndexOf(c) &lt;&gt; -1 Then
+            If ("'|]" &amp; Environment.NewLine).IndexOf(c) &lt;&gt; -1 Then
                 sb.Append("|"c)
             End If
             sb.Append(c)

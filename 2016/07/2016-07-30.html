@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upgrading RC1 to DotNet Core RC2</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Upgrading RC1 to DotNet Core RC2</h1>
+    <p>Yeah, I know there are already a couple of definitive guides to this already on the net, but here's the checklist
+        I compiled for myself when I had to upgrade several RC1 projects. I'll just leave this here in case someone else
+        can make use of it or in case I need to re-reference it some time in the future.</p>
+
+    <p>If you are upgrading a project to RC2, all RC1 dependencies should be upgraded to RC2 to avoid conflicts - that
+        means if you wrote a NuGet package that uses RC1 libraries, your API service consumes this NuGet package and you
+        are upgrading the service to RC2, then you should upgrade the RC1 based NuGet package to RC2 in addition to
+        upgrade the API service. You should of course have upgraded to Visual Studio 2015 Update 2 at least before
+        continuing.</p>
+
+    <p>1) Upgrade xproj files (best to do this with something like notepad)<br/>
+        1.1) Replace<br/>
+        <code class="xml">&lt;Import Project="$(VSToolsPath)\<strong>DNX</strong>\Microsoft.<strong>DNX</strong>.Props"
+            Condition="'$(VSToolsPath)' != ''"
+            /&gt;</code><br/>
+        with<br/>
+        <code class="xml">&lt;Import Project="$(VSToolsPath)\<strong>DotNet</strong>\Microsoft.<strong>DotNet</strong>.Props"
+            Condition="'$(VSToolsPath)'
+            != ''" /&gt;</code><br/>
+        1.2.) If Web/ project, replace<br/>
+        <code class="xml">&lt;Import Project="$(VSToolsPath)\<strong>DNX</strong>\Microsoft.<strong>DNX</strong>.targets"
+            Condition="'$(VSToolsPath)' !=
+            ''" /&gt;</code><br/>
+        with<br/>
+        <code class="xml">&lt;Import
+            Project="$(VSToolsPath)\<strong>DotNet.Web</strong>\Microsoft.<strong>DotNet</strong>.Web.targets"
+            Condition="'$(VSToolsPath)' != ''" /&gt;</code><br/>
+        1.3) If class library, replace<br/>
+        <code class="xml">&lt;Import Project="$(VSToolsPath)\<strong>DNX</strong>\Microsoft.<strong>DNX</strong>.targets"
+            Condition="'$(VSToolsPath)' !=
+            ''" /&gt;</code><br/>
+        with<br/>
+        <code class="xml">&lt;Import Project="$(VSToolsPath)\<strong>DotNet</strong>\Microsoft.<strong>DotNet</strong>.targets"
+            Condition="'$(VSToolsPath)' != ''" /&gt;</code><br/>
+        1.4) Replace<br/>
+        <samp>..\..\artifacts\obj\$(MSBuildProjectName)</samp><br/>
+        with<br/>
+        <samp>.\obj</samp><br/>
+        1.5) Replace<br/>
+        <samp>..\..\artifacts\bin\$(MSBuildProjectName)\</samp><br/>
+        with<br/>
+        <samp>.\bin\</samp><br/>
+        1.6) Add new line after <code class="xml">&lt;/OutputPath&gt;</code><br/>
+        <code class="xml">&lt;TargetFrameworkVersion&gt;v4.6.1&lt;/TargetFrameworkVersion&gt;</code></p>
+
+    <p>The next steps can be easily accomplished from inside of Visual Studio</p>
+
+    <p>2) Edit global.json<br/>
+        2.1) Remove the sdk section<br/>
+        3) Move the web.config<br/>
+        3.1) If the project has a web.config, move it out of the wwwroot folder to the root folder of the project<br/>
+        4) Edit project.json files<br/>
+        4.1) Replace</p>
+    <pre>       "Microsoft.AspNet.IISPlatformHandler": "1.0.0-rc1-final",
+       "Microsoft.AspNet.Mvc": "6.0.0-rc1-final",
+       "Microsoft.AspNet.Server.Kestrel": "1.0.0-rc1-final",
+       "Microsoft.AspNet.StaticFiles": "1.0.0-rc1-final",
+       "Microsoft.Extensions.Configuration.FileProviderExtensions": "1.0.0-rc1-final",
+       "Microsoft.Extensions.Configuration.Json": "1.0.0-rc1-final",
+       "Microsoft.Extensions.Logging": "1.0.0-rc1-final",
+       "Microsoft.Extensions.Logging.Console": "1.0.0-rc1-final",
+       "Microsoft.Extensions.Logging.Debug": "1.0.0-rc1-final",</pre>
+    <p>with</p>
+    <pre>       "Microsoft.AspNetCore.Mvc": "1.0.0-rc2-final",
+       "Microsoft.AspNetCore.Server.IISIntegration": "1.0.0-rc2-final",
+       "Microsoft.AspNetCore.Server.Kestrel": "1.0.0-rc2-final",
+       "Microsoft.Extensions.Configuration.EnvironmentVariables": "1.0.0-rc2-final",
+       "Microsoft.Extensions.Configuration.FileExtensions": "1.0.0-rc2-final",
+       "Microsoft.Extensions.Configuration.Json": "1.0.0-rc2-final",
+       "Microsoft.Extensions.Logging": "1.0.0-rc2-final",
+       "Microsoft.Extensions.Logging.Console": "1.0.0-rc2-final",
+       "Microsoft.Extensions.Logging.Debug": "1.0.0-rc2-final",</pre>
+    <p>4.2) Replace<br/>
+        <samp>"AspNet.Mvc.TypedRouting": "1.0.2-rc1-final",</samp><br/>
+        with<br/>
+        <samp>"AspNet.Mvc.TypedRouting": "1.1.0-rc2-final"</samp><br/>
+        4.3) Replace<br/>
+        <samp>"Microsoft.AspNetCore.Tooling.Razor": "1.0.0-rc1-final"</samp><br/>
+        with</p>
+    <pre>"Microsoft.AspNetCore.Razor.Tools": {
+     "version": "1.0.0-preview1-final",
+     "type": "build"
+   }</pre>
+    <p>4.4) Replace frameworks (my projects only ever used one framework)<br/>
+        <samp>"net451"</samp> or <samp>"dnx451"</samp><br/>
+        with<br/>
+        <samp>"net461"</samp><br/>
+        4.5) If you had a reference to:</p>
+    <pre>        "frameworkAssemblies": {
+          "System.Runtime.Serialization": "4.0.0.0"
+        }</pre>
+    <p>remove it, and add to the dependencies section<br/>
+        <samp>"System.Runtime.Serialization.Primitives": "4.1.1-rc2-24027"</samp><br/>
+        4.6) If you had a reference to:</p>
+    <pre>        "frameworkAssemblies": {
+          "System.ComponentModel.DataAnnotations": "4.0.0.0"
+        }</pre>
+    <p>remove it, and add to the dependencies section<br/>
+        <samp>"System.ComponentModel.Annotations": "4.1.0-rc2-24027"</samp><br/>
+        4.7) Remove sections licenseUrl, projectUrl, tags, commands, exclude, and publishExclude<br/>
+        4.8) Update minor version number if not major version number<br/>
+        4.9) Replace</p>
+    <pre>     "compilationOptions": {
+       "emitEntryPoint": true
+     },</pre>
+    <p>with</p>
+    <pre>     "buildOptions": {
+       "emitEntryPoint": true,
+       "preserveCompilationContext": true
+     },</pre>
+    <p>4.10) Remove commands section<br/>
+        4.11) If web/api project, add</p>
+    <pre>     "tools": {
+       "Microsoft.AspNetCore.Server.IISIntegration.Tools": {
+         "version": "1.0.0-preview1-final",
+         "imports": "portable-net45+win8+dnxcore50"
+       }
+     },
+     "publishOptions": {
+       "include": [
+         "wwwroot",
+         "Views",
+         "appsettings.json",
+         "web.config"
+       ]
+     },
+     "runtimeOptions": {
+       "configProperties": {
+         "System.GC.Server": true
+       }
+     },
+     "scripts": {
+       "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
+     },</pre>
+    <p>4.12) Replace any project reference versions in dependencies with<br/>
+        <samp>{ "target": "project" }</samp><br/>
+        4.13) If it is a test project<br/>
+        4.13.1) Replace<br/>
+        <samp>"xunit.runner.dnx": "2.1.0-rc1-build204"</samp><br/>
+        with<br/>
+        <samp>"dotnet-test-xunit": "1.0.0-rc2-build10025"</samp><br/>
+        4.13.2) Replace<br/>
+        <samp>"Microsoft.AspNet.TestHost": "1.0.0-rc1-final",</samp><br/>
+        with<br/>
+        <samp>"Microsoft.AspNetCore.TestHost": "1.0.0-rc2-final",</samp><br/>
+        4.13.3) Add<br/>
+        <samp>"testRunner": "xunit",</samp>
+        4.13.5) Remove sections tooling, description, authors<br/>
+        4.14) If web or test project, add</p>
+    <pre>     "tools": {
+       "Microsoft.DotNet.Watcher.Tools": {
+         "version": "1.0.0-preview1-final",
+         "imports": "portable-net451+win8"
+       }}</pre>
+    <p>5) Edit launchSettings.json<br/>
+        5.1) Replace<br/>
+        <samp>"Hosting:Environment"</samp>
+        with<br/>
+        <samp>"ASPNETCORE_ENVIRONMENT"</samp>
+        6) Edit web.config<br/>
+        6.1) Replace</p>
+    <pre><code class="xml">     &lt;system.webServer&gt;
+       &lt;handlers&gt;
+         &lt;add name="httpPlatformHandler" path="*" verb="*" modules="httpPlatformHandler" resourceType="Unspecified"/&gt;
+       &lt;/handlers&gt;
+       &lt;httpPlatform processPath="%DNX_PATH%" arguments="%DNX_ARGS%" stdoutLogEnabled="false" startupTimeLimit="3600"/&gt;
+     &lt;/system.webServer&gt;</code></pre>
+
+    <p>with</p>
+
+    <pre><code class="xml">   &lt;system.webServer&gt;
+      &lt;handlers&gt;
+        &lt;add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModule" resourceType="Unspecified"/&gt;
+      &lt;/handlers&gt;
+      &lt;aspNetCore processPath="%LAUNCHER_PATH%" arguments="%LAUNCHER_ARGS%" stdoutLogEnabled="false" stdoutLogFile=".\logs\stdout" forwardWindowsAuthToken="false"/&gt;
+    &lt;/system.webServer&gt;</code></pre>
+    <p>7) Edit appsettings.json<br/>
+        7.1 ) Replace<br/>
+        <samp>"Default": "Verbose",</samp><br/>
+        with<br/>
+        <samp>"Default": "Debug",</samp><br/>
+        8) If your project used Entity Framework 7, you will need to downgrade to Entity Framework 6. EF7 rc2 is not
+        ready for prime time. For example, it has problems with <a
+                href="https://github.com/aspnet/EntityFramework/issues/5514">GUID foreign keys</a>. I might write in
+        detail the steps
+        necessary to do this.<br/>
+        8) Edit .Net code<br/>
+        8.1) Change any IServiceCollection.AddInstance method calls to IServiceCollection.AddSingleton<br/>
+        8.2) Change Microsoft.Extensions.Logging.LogLevel.Verbose to Microsoft.Extensions.Logging.LogLevel.Trace<br/>
+        8.3) Replace Microsoft.AspNet namespace references with Microsoft.AspNetCore<br/>
+        8.4) Replace HttpNotFound with NotFound<br/>
+        8.5) Replace HttpBadRequest with BadRequest<br/>
+        8.6) Replace HttpStatusCodeResult with StatusCodeResult<br/>
+        8.7) Replace HttpOkObjectResult with OkObjectResult<br/>
+        8.8) Replace ContentResult.ContentType.MediaType with ContentResult.ContentType<br/>
+        8.9) Replace GetType().Assembly with GetType().GetTypeInfo().Assembly<br/>
+        8.10) Add <code class="csharp">using System.Reflection;</code> if necessary<br/>
+        8.11) Add ".SetBasePath(env.ContentRootPath)" after "new ConfigurationBuilder()"<br/>
+        8.12) Remove calls to UseIISPlatformHandler<br/>
+        8.13) Remove calls to UseStaticFiles<br/>
+        8.14) Replace<br/>
+    <pre><code class="csharp">      public static void Main(string[] args) =&gt; WebApplication.Run&lt;Startup&gt;(args);</code></pre>
+    <p>with</p>
+    <pre><code class="csharp">      public static void Main(string[] args) =&gt;
+               new WebHostBuilder()
+                   .UseKestrel()
+                   .UseContentRoot(Directory.GetCurrentDirectory())
+                   .UseIISIntegration()
+                   .UseStartup&lt;Startup&gt;()
+                   .Build().Run();</code></pre>
+    <p>9) Routes in web apps need to not include IIS application paths anymore. Back in RC1 the routes had to include
+        every part of the URL following the domain name. In RC2, you only need to include the part of the URL that
+        follows the URL to the web application in IIS.<br/>
+        10) Edit build scripts<br/>
+        10.1) Replace</p>
+    <pre><code>#include the path to NodeJS, necessary for npm, boiwer, gulp, etc to run
+        $Env:Path += ";.\node_modules\.bin;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Extensions\Microsoft\Web Tools\External\git;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Extensions\Microsoft\Web Tools\External"</code></pre>
+
+    <p>with</p>
+
+    <pre><code>#include the path to NodeJS, necessary for npm, bower, gulp, etc to run
+        $Env:Path += ";.\node_modules\.bin;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Web\External;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Web\External\git"</code></pre>
+</article>
+</body>
+</html>

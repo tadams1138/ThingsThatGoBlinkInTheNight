@@ -137,7 +137,7 @@ Public MustInherit Class CustomSerializer
             End If
 
             If typeToDeserialize Is Nothing Then
-                typeToDeserialize = Type.GetType(Me.GetType.Namespace & "." & _
+                typeToDeserialize = Type.GetType(Me.GetType.Namespace &amp; "." &amp; _
                                                  shortTypeName, False, True)
             End If
 
@@ -148,8 +148,8 @@ Public MustInherit Class CustomSerializer
                 End If
             Catch ex As Exception
                 Trace.TraceError(String.Format( _
-                        "VersionConfigToNamespaceAssemblyObjectBinder.BindToType " & _
-                        "could not deserialize for assmbly name {0} and type name " & _
+                        "VersionConfigToNamespaceAssemblyObjectBinder.BindToType " &amp; _
+                        "could not deserialize for assembly name {0} and type name " &amp; _
                         "{1} : {2}", assemblyName, typeName, ex.Message))
             End Try
 
@@ -188,8 +188,8 @@ Public MustInherit Class CustomSerializer
                 DirectCast(info.GetValue("XmlSchema", GetType(String)), String))
             Dim xmlData As String = DirectCast( _
                 info.GetValue("XmlDiffGram", GetType(String)), String)
-            Dim rp As String = "(?&lt;DATE&gt;\d{4}-\d{2}-\d{2})" & _
-                               "(?&lt;TIME&gt;T\d{2}:\d{2}:\d{2}(.\d{7})?)" & _
+            Dim rp As String = "(?&lt;DATE&gt;\d{4}-\d{2}-\d{2})" &amp; _
+                               "(?&lt;TIME&gt;T\d{2}:\d{2}:\d{2}(.\d{7})?)" &amp; _
                                "(?&lt;HOUR&gt;[+-]\d{2})(?&lt;LAST&gt;:\d{2})"
 
             ' Replace UTC offset value

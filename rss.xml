@@ -20,14 +20,14 @@
       <description>Rule Set Designer</description>
     </item>
     <item>
-      <title>The 'minClientVersion' attribute is not declared</title>
-      <link>https://www.tandisoft.com/2013/09/2013-09-30.html</link>
-      <description>The 'minClientVersion' attribute is not declared</description>
+      <title>Upgrading RC1 to DotNet Core RC2</title>
+      <link>https://www.tandisoft.com/2016/07/2016-07-30.html</link>
+      <description>Upgrading RC1 to DotNet Core RC2</description>
     </item>
     <item>
-      <title>The Reinvented Wheel</title>
-      <link>https://www.tandisoft.com/2013/09/2013-09-07.html</link>
-      <description>The Reinvented Wheel</description>
+      <title>Adventures with MVC 6 - Episode IV : Synchronizing Package Versions in a Solution</title>
+      <link>https://www.tandisoft.com/2016/05/2016-05-28.html</link>
+      <description>Adventures with MVC 6 - Episode IV : Synchronizing Package Versions in a Solution</description>
     </item>
   </channel>
 </rss>
