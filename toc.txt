@@ -6,6 +6,7 @@
 <li><a href=/2019/09/2019-09-15.html>Multiple constructors an anti-pattern?</a></li>
 <li><a href=/2019/06/2019-06-19.html>The Ruminant Pattern</a></li>
 <li><a href=/2018/05/2018-05-31.html>Rule Set Designer</a></li>
+<li><a href=/2014/02/2014-02-12.html>New AR Drone Remote released to Windows Phone 8 and Windows 8.1!</a></li>
 <li><a href=/2013/09/2013-09-30.html>The 'minClientVersion' attribute is not declared</a></li>
 <li><a href=/2013/09/2013-09-07.html>The Reinvented Wheel</a></li>
 <li><a href=/2013/08/2013-08-07.html>AR Drone Remote released for Windows Phone!</a></li>
@@ -17,5 +18,4 @@
 <li><a href=/2012/02/2012-02-17.html>XmlConfigMerge - Merge config file settings</a></li>
 <li><a href=/2012/02/2012-02-14T09:02.html>1 Year!</a></li>
 <li><a href=/2012/02/2012-02-14T09:01.html>Construct WCF Binding from string (XML)</a></li>
-<li><a href=/2012/02/2012-02-06.html>How to solve: DataSets change DateTime values when transmitted across time zones</a></li>
 </ul>
