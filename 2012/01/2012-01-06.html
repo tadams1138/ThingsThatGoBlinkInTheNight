@@ -27,16 +27,16 @@ Public Module ServiceControllerExtension
     &lt;Extension()&gt; _
     Public Sub Restart(s As System.ServiceProcess.ServiceController)
         Dim tempBatch As String = System.IO.Path.GetTempFileName()
-        System.IO.File.Move(tempBatch, tempBatch & ".bat")
-        tempBatch &= ".bat"
+        System.IO.File.Move(tempBatch, tempBatch &amp; ".bat")
+        tempBatch &amp;= ".bat"
         Using w As New System.IO.StreamWriter(tempBatch)
-            w.WriteLine("net stop """ & s.ServiceName & """")
+            w.WriteLine("net stop """ &amp; s.ServiceName &amp; """")
             w.WriteLine("REM The following line simply pauses for 3 seconds")
             w.WriteLine("CHOICE /C:AB /T:3 /D:A > NUL") 'This line just pauses. 
             'Somehow a lack of a pause prevents the service from starting up.
             'w.WriteLine("ping localhost")  'alternate to above line
-            w.WriteLine("net start """ & s.ServiceName & """")
-            w.WriteLine("del /Q """ & tempBatch & """")
+            w.WriteLine("net start """ &amp; s.ServiceName &amp; """")
+            w.WriteLine("del /Q """ &amp; tempBatch &amp; """")
         End Using
         Process.Start(tempBatch)
     End Sub 

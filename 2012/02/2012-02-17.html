@@ -509,7 +509,7 @@ Public Class ConfigFileManager
         m_xmlDocument.LoadXml(masterConfigPath.OuterXml)
 
         If File.Exists(mergeFromConfigPath) Then
-            Debug.WriteLine("Merging from " & mergeFromConfigPath)
+            Debug.WriteLine("Merging from " &amp; mergeFromConfigPath)
             'Merge approach:
             ' x Use from-last-install config as base
             ' x Merge in any non-existing keyvalue pairs from distrib-config
@@ -522,8 +522,8 @@ Public Class ConfigFileManager
                 reInstallConfig.Load(mergeFromConfigPath)
             Catch ex As Exception
                 fromLastInstallConfigPath = Nothing
-                Throw New ArgumentException(("Could not read config '" & _
-                                             mergeFromConfigPath & "'"), _
+                Throw New ArgumentException(("Could not read config '" &amp; _
+                                             mergeFromConfigPath &amp; "'"), _
                                          "mergeFromConfigPath", ex)
             End Try
             UpdateExistingElementsAndAttribs(reInstallConfig, m_xmlDocument)
@@ -534,7 +534,7 @@ Public Class ConfigFileManager
 
     Private Function GetKeyValueNode(ByVal key As String) As XmlNode
         Dim nodes As XmlNodeList = XmlDocument.SelectNodes( _
-            "/configuration/appSettings/add[@key='" & key & "']")
+            "/configuration/appSettings/add[@key='" &amp; key &amp; "']")
 
         If nodes.Count = 0 Then
             Return Nothing
@@ -548,7 +548,7 @@ Public Class ConfigFileManager
                                              ByVal fileAttributes As FileAttributes)
 
         File.SetAttributes(path, File.GetAttributes(path) And _
-                 DirectCast((DirectCast(&H7FFFFFFF, FileAttributes) - fileAttributes),  _
+                 DirectCast((DirectCast(&amp;H7FFFFFFF, FileAttributes) - fileAttributes),  _
                      FileAttributes))
     End Sub
 
@@ -601,19 +601,19 @@ Public Class ConfigFileManager
                     Throw New ApplicationException("toParentNode.OwnerDocument == null")
                 End If
 
-                Debug.WriteLine(("app: " & toParentNode.Name & "/") + node.Name)
+                Debug.WriteLine(("app: " &amp; toParentNode.Name &amp; "/") + node.Name)
 
                 If node.ParentNode.Name &lt;&gt; toParentNode.Name Then
                     Throw New ApplicationException( _
-                        ("node.ParentNode.Name != toParentNode.Name: " & _
-                         node.ParentNode.Name & " !=") + toParentNode.Name)
+                        ("node.ParentNode.Name != toParentNode.Name: " &amp; _
+                         node.ParentNode.Name &amp; " !=") + toParentNode.Name)
                 End If
                 Try
                     toNode = toParentNode.AppendChild( _
                         toParentNode.OwnerDocument.CreateElement(node.Name))
                 Catch ex As Exception
                     Throw New ApplicationException( _
-                        "ex during toNode = toParentNode.AppendChild(: " & ex.Message)
+                        "ex during toNode = toParentNode.AppendChild(: " &amp; ex.Message)
                 End Try
             End If
 
@@ -627,7 +627,7 @@ Public Class ConfigFileManager
             For Each attrib As XmlAttribute In node.Attributes
                 Dim toAttrib As XmlAttribute = toNode.Attributes(attrib.Name)
                 If toAttrib Is Nothing Then
-                    Debug.WriteLine(("attr: " & toNode.Name & "@") + attrib.Name)
+                    Debug.WriteLine(("attr: " &amp; toNode.Name &amp; "@") + attrib.Name)
                     toAttrib = toNode.Attributes.Append( _
                         toNode.OwnerDocument.CreateAttribute(attrib.Name))
                 End If

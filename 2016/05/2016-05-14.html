@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adding Open Command Prompt to Visual Studio</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adding Open Command Prompt to Visual Studio</h1>
+    <p>I added a shortcut-key friendly way to get a command prompt open to the active project's folder.</p>
+
+    <p>This becomes increasingly handy since so much regarding DNX project development still doesn't have GUI
+        support.</p>
+
+    <p>In Visual Studio, click Tools->External Tools…</p>
+
+    <p>Click Add and enter the following information:</p>
+
+    <img src="screenshot%202.png" alt="External Tools">
+
+    <p>The character that follows the '&amp;' character will serve as the "shortcut key". You may have to find one not
+        already in use in the Tools menu though, and that might be tough. Good luck. I found that the 'r' was not yet in
+        use, so I went with that. The way I usually discover what is or is not in use, I hit 'Alt' and then 't' in
+        Visual studio and see what letters in the tools menu are underlined. Anything underlined is already in use.
+        Process of elimination…</p>
+
+    <p>Anyhow, after you click OK on the dialog, you should now be able to get a command prompt open to whatever project
+        you are actively in. You can get to it quickly by successively hitting 'Alt' 't' 'r' or replace the 'r' with
+        whatever shortcut key you chose.</p>
+</article>
+</body>
+</html>

@@ -66,7 +66,7 @@ End Function
 
 Private Function MaskCCMatch(ByVal match As Match) As String
   Dim CCnumber As String = match.ToString
-  Return Regex.Replace(CCnumber.Substring(0, CCnumber.Length - 4), "\d", "*") & CCnumber.Substring(CCnumber.Length - 4)
+  Return Regex.Replace(CCnumber.Substring(0, CCnumber.Length - 4), "\d", "*") &amp; CCnumber.Substring(CCnumber.Length - 4)
 End Function</code></pre>
 
     <p><code class="vb">MaskCC("you gave me 1234 5678 9090 1212 as your CC number")</code> returns <samp>"you gave me
