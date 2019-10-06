@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adding remarks to .Net Web Api Help documentation</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adding remarks to .Net Web Api Help documentation</h1>
+    <p>While <a href="http://www.asp.net/web-api">http://www.asp.net/web-api</a> has certainly been helpful, I hadn't
+        found a way to add additional details to my help documentation, like the notes stored in the <code>&lt;remarks&gt;</code>
+        tags.</p>
+
+    <p>If you don't know how to auto-generate help documentation for your .Net Web Api, first read through <a
+            href="http://www.asp.net/web-api/overview/creating-web-apis/creating-api-help-pages">http://www.asp.net/web-api/overview/creating-web-apis/creating-api-help-pages</a>
+    </p>
+
+    <p>As you can see in those links, documentation for your API is auto-generated from the XML comments you leave above
+        classes, methods, properties, etc. Now that you're an expert on .Net Web API and auto-generated help files, let
+        me share with you my solution for adding additional details to the help documentation like the <code>&lt;remarks&gt;</code>
+        tags above a property.</p>
+
+    <p>I will skip the reasoning on how I got here since my mind travels in TDD style loops constantly refactoring
+        methods, adding arguments, removing them until I get the final working solution. You will not see any tests
+        here, and that is unfortunately because the process of adding tests to the Help framework (which lacks tests)
+        would have been far too cumbersome just to refactor this classes into something testable. I wanted to leave
+        these classes as close to the way they were when I first got them in a nuget package.</p>
+
+    <h2>Step 1) Add one line to the ModelDescriptionGenerator class in the GenerateComplexTypeModelDescription
+        method:</h2>
+
+    <pre><code class="csharp">        private ModelDescription GenerateComplexTypeModelDescription(Type modelType)
+        {
+            ComplexTypeModelDescription complexModelDescription = new ComplexTypeModelDescription
+            {
+                Name = ModelNameHelper.GetModelName(modelType),
+                ModelType = modelType,
+                Documentation = CreateDefaultDocumentation(modelType)
+            };
+            GeneratedModels.Add(complexModelDescription.Name, complexModelDescription);
+            bool hasDataContractAttribute = modelType.GetCustomAttribute&lt;DataContractAttribute&gt;() != null;
+            PropertyInfo[] properties = modelType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (PropertyInfo property in properties)
+            {
+                if (ShouldDisplayMember(property, hasDataContractAttribute))
+                {
+                    ParameterDescription propertyModel = new ParameterDescription
+                    {
+                        Name = GetMemberName(property, hasDataContractAttribute)
+                    };
+                    if (DocumentationProvider != null)
+                    {
+                        propertyModel.Documentation = DocumentationProvider.GetDocumentation(property);
+                        <mark>AddAnnotations(property, propertyModel);</mark>>
+                    }
+                    GenerateAnnotations(property, propertyModel);
+                    complexModelDescription.Properties.Add(propertyModel);
+                    propertyModel.TypeDescription = GetOrCreateModelDescription(property.PropertyType);
+                }
+            }
+            FieldInfo[] fields = modelType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+            foreach (FieldInfo field in fields)
+            {
+                if (ShouldDisplayMember(field, hasDataContractAttribute))
+                {
+                    ParameterDescription propertyModel = new ParameterDescription
+                    {
+                        Name = GetMemberName(field, hasDataContractAttribute)
+                    };
+                    if (DocumentationProvider != null)
+                    {
+                        propertyModel.Documentation = DocumentationProvider.GetDocumentation(field);
+                    }
+                    complexModelDescription.Properties.Add(propertyModel);
+                    propertyModel.TypeDescription = GetOrCreateModelDescription(field.FieldType);
+                }
+            }
+            return complexModelDescription;
+        }</code></pre>
+    <h2>Step 2) Add the AddAnnotations method to the same class:</h2>
+    <pre><code class="csharp">        private void AddAnnotations(PropertyInfo property, ParameterDescription propertyModel)
+        {
+            string additionalInformation = DocumentationProvider.GetAdditionalInformation(property);
+            if (additionalInformation != null)
+            {
+                propertyModel.Annotations.Add(new ParameterAnnotation
+                {
+                    Documentation = additionalInformation
+                });
+            }
+        }</code></pre>
+    <h2>Step 3) Add GetAdditionalInformation to IModelDocumentationProvider</h2>
+    <pre><mark class="csharp">    public interface IModelDocumentationProvider
+    {
+        string GetDocumentation(MemberInfo member);
+        <mark>string GetAdditionalInformation(MemberInfo member);</mark>
+        string GetDocumentation(Type type);
+    }</code></pre>
+    <h2>Step 4) Refactor GetDocumentation in XmlDocumentationProvider</h2>
+    <pre><code class="csharp">        public string GetDocumentation(MemberInfo member)
+        {
+            <mark>return GetMemberTag(member, "summary");
+        }
+        public string GetAdditionalInformation(MemberInfo member)
+        {
+            return GetMemberTag(member, "remarks");
+        }
+        private string GetMemberTag(MemberInfo member, string tagName)
+        {</mark>
+            string memberName = String.Format(CultureInfo.InvariantCulture, "{0}.{1}", GetTypeName(member.DeclaringType),
+                member.Name);
+            string expression = member.MemberType == MemberTypes.Field ? FieldExpression : PropertyExpression;
+            string selectExpression = String.Format(CultureInfo.InvariantCulture, expression, memberName);
+            XPathNavigator propertyNode = _documentNavigator.SelectSingleNode(selectExpression);
+            return GetTagValue(propertyNode, <mark>tagName</mark>);
+        }</code></pre>
+
+    <p>Now your help pages will include the remarks tags in the Additional Information column of the help pages.</p>
+
+    <img src="additional%20information.png" alt="Additional information">
+
+    <p>You can of course build on this to include other fields, or apply this same logic to things other than complex
+        types properties.</p>
+</article>
+
+<h2>Comments</h2>
+<ul>
+    <li>
+        <p><a href="https://www.blogger.com/profile/12523027557273508321">C.Jernberg</a> August 20, 2014 at 5:47 AM</p>
+        <p>Perfect! Many thanks.</p>
+    </li>
+    <li>
+        <p><a href="https://www.blogger.com/profile/07988276588613740144">jp54</a> March 20, 2015 at 12:39 PM</p>
+        <p>This is great, thanks for the help! Any chance you could put this into a nuget package that we can
+            install?</p>
+        <ul>
+            <li>
+                <p><a href="https://www.blogger.com/profile/03206943530699015630">Whale Biologist - Tom Adams</a> March
+                    25, 2015 at 10:14 PM</p>
+                <p>I'll give that a shot. I'll see if the MS team will accept a pull request to include my changes in
+                    the Web Api Help Pages nugget package.</p>
+            </li>
+        </ul>
+    </li>
+    <li>
+        <p><a href="https://www.blogger.com/profile/16253172952731938447">Davide Vignali</a> May 18, 2015 at 10:07 AM
+        </p>
+        <p>Hi, good Article...<br/>
+            <br/>
+            But I need a information for the follow case:<br/>
+            <br/>
+            ///<br/>
+            /// Summary<br/>
+            ///<br/>
+            /// Test test test<br/>
+            public HttpResponseMessage Select(){<br/>
+            ...<br/>
+            return response;<br/>
+            }<br/>
+            <br/>
+            Bye<br/>
+            Davide</p>
+        <ul>
+            <li>
+                <p><a href="https://www.blogger.com/profile/03206943530699015630">Whale Biologist - Tom Adams</a> May
+                    19, 2015 at 1:33 PM</p>
+                <p>I haven't had a need for that, but you could certainly try contributing that solution to the Web Api
+                    project. http://aspnetwebstack.codeplex.com/</p>
+            </li>
+        </ul>
+    </li>
+</ul>
+
+</body>
+</html>
