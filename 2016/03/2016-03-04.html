@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How not to write a linq query</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>How not to write a linq query</h1>
+
+    <p>I ran into a performance problem just recently in my vote scoring strategy. The strategy was developed using TDD
+        and passed the tests with flying colors when tested against 6 contestants and 20 or so votes. All edge cases
+        were covered, and the calculations were correct. It wasn't until the vote count approached 4200 in production
+        and 24 contestants that performance problems were observed.</p>
+
+    <p>So I wrote a load test against the vote scoring strategy, charted the run times and analyzed that the algorithm
+        was O(n^2) where the number of milliseconds to complete was equal to 0.04v + 0.000285v^2 where v is the number
+        of votes. Based on this regression equation, I could predict that 1 million votes, a number that I think we
+        should be able to handle, would take 79 hours to calculate the scores. I think it's safe at this point to invest
+        some time in improving the algorithm.</p>
+
+    <h2>Charted runtimes</h2>
+    <table>
+        <tbody>
+        <tr>
+            <th>Votes</th>
+            <th>Milliseconds</th>
+        </tr>
+        <tr>
+            <td>1000</td>
+            <td>323</td>
+        </tr>
+        <tr>
+            <td>2000</td>
+            <td>1252</td>
+        </tr>
+        <tr>
+            <td>3000</td>
+            <td>2832</td>
+        </tr>
+        <tr>
+            <td>4000</td>
+            <td>4751</td>
+        </tr>
+        <tr>
+            <td>5000</td>
+            <td>7308</td>
+        </tr>
+        <tr>
+            <td>6000</td>
+            <td>10411</td>
+        </tr>
+        <tr>
+            <td>7000</td>
+            <td>14029</td>
+        </tr>
+        <tr>
+            <td>8000</td>
+            <td>18622</td>
+        </tr>
+        <tr>
+            <td>9000</td>
+            <td>23407</td>
+        </tr>
+        <tr>
+            <td>10000</td>
+            <td>28825</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>Inefficient algorithm:</h2>
+    <pre><code class="csharp">public async Task&lt;IEnumerable&lt;ContestantWithScore&gt;&gt; GetRankings(int warId)
+{
+    var contestants = await _contestantRepository.GetAll(warId);
+    var matches = await _matchRepository.GetAll(warId);
+    var votes = await _voteRepository.GetAll(warId);
+
+
+
+    var scores = (from v in votes.Where(v =&gt; v.Choice != VoteChoice.Pass)
+            from m in matches.Where(m =&gt; m.Id == v.MatchId)
+            select(v.Choice == VoteChoice.Contestant1Won ? m.Contestant1 : m.Contestant2))
+            .GroupBy(x =&gt; x)
+            .Select(group =&gt; new { Id = group.Key, Score = group.Count() });
+
+
+
+    var results = from c in contestants
+                    from s in scores.Where(s =&gt; s.Id == c.Id).DefaultIfEmpty()
+            select new ContestantWithScore
+            {
+                Contestant = c,
+                Score = s == null ? 0 : s.Score
+            };
+    return results;
+}</code></pre>
+
+    <p>The first problem that stood out at me is how the code alternates between Linq keywords and Linq extension
+        methods. The first "join" is applied after the vote filter is applied. The second "join" has a filter applied on
+        the second data set. It took me a second to finally spot this biggest culprit here though: those are not <a
+                href="https://msdn.microsoft.com/en-us/library/bb311040.aspx">joins</a>. Those are a "<a
+                href="https://msdn.microsoft.com/library/bb534336(v=vs.100).aspx">select many</a>" operations! This is
+        not an optimized join operation, this is a brute force! This is iterating over all elements of the vote
+        collection, and then one by one iterating of over all elements of the matches collection for all elements with a
+        property Id equal to the MatchId property of the current vote element. It's no wonder the performance was taking
+        a dive every time we added new votes. If there was one vote for every match (as there is likely to be, let's
+        ignore the possibility that no one voted on a particular match), and there were 4000 randomly generated match
+        ups, then we would iterate over 4000 votes 4000 times for a total of 16 million iterations. If we add just one
+        more match up and vote, then we iterate an additional 8,001 times. This is clearly an O(n^2) algorithm.</p>
+
+    <p>Though poorly written, we can probably overlook the contestant "select many" operation since the number of
+        contestants should be relatively low compared to the number of votes.</p>
+
+    <p>I rewrote the whole algorithm to properly take advantage of Linq's join operations. The improved algorithm times
+        appears much more linear, an O(n) algorithm where the number of milliseconds to run is near 0.00155v where v is
+        the number of votes. This is a vast improvement on the last algorithm. I was able to calculate scores for one
+        million votes in just over 1 second. That is a number I can work with and seek other solutions like caching if I
+        need to continue to improve on production speeds.</p>
+
+    <h2>Charted Runtimes</h2>
+    <table>
+        <tbody>
+        <tr>
+            <th>Votes</th>
+            <th>Milliseconds</th>
+        </tr>
+        <tr>
+            <td>0</td>
+            <td>0</td>
+        </tr>
+        <tr>
+            <td>200000</td>
+            <td>292</td>
+        </tr>
+        <tr>
+            <td>400000</td>
+            <td>500</td>
+        </tr>
+        <tr>
+            <td>600000</td>
+            <td>941</td>
+        </tr>
+        <tr>
+            <td>800000</td>
+            <td>953</td>
+        </tr>
+        <tr>
+            <td>1000000</td>
+            <td>1201</td>
+        </tr>
+        <tr>
+            <td>1200000</td>
+            <td>1512</td>
+        </tr>
+        <tr>
+            <td>1400000</td>
+            <td>2946</td>
+        </tr>
+        <tr>
+            <td>1600000</td>
+            <td>3317</td>
+        </tr>
+        <tr>
+            <td>1800000</td>
+            <td>2526</td>
+        </tr>
+        <tr>
+            <td>2000000</td>
+            <td>2832</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>Improved algorithm:</h2>
+    <pre><code class="csharp">public async Task&lt;IEnumerable&lt;ContestantWithScore&gt;&gt; GetRankings(int warId)
+{
+    var contestants = await _contestantRepository.GetAll(warId);
+    var matches = await _matchRepository.GetAll(warId);
+    var votes = await _voteRepository.GetAll(warId);
+
+
+
+    var winners = from v in votes
+                    join m in matches on v.MatchId equals m.Id
+                    where v.Choice != VoteChoice.Pass
+                    select (v.Choice == VoteChoice.Contestant1Won ? m.Contestant1 : m.Contestant2);
+
+
+
+    var scores = from w in winners
+                    group w by w into g
+                    select new { Id = g.Key, Score = g.Count() };
+
+
+
+    var results = from c in contestants
+                    join s in scores on c.Id equals s.Id into scoredGroup
+                    from score in scoredGroup.DefaultIfEmpty()
+                    select new ContestantWithScore
+                    {
+                        Contestant = c,
+                        Score = score == null ? 0 : score.Score
+                    };
+    return results;
+}</code></pre>
+
+    <p>The good news was that there were tests already in place to guarantee that no functionality was lost in my
+        refactoring. The lesson learned is how to spot a "select many" which is doing the job of a join.</p>
+</article>
+</body>
+</html>

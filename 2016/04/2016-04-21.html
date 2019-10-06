@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adventures with MVC 6 - Episode I : Setting up my solution structure</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adventures with MVC 6 - Episode I : Setting up my solution structure</h1>
+
+    <p>Having worked on several Web API projects in the past, I've observed a pattern that worked really well for the
+        teams with which I've worked.</p>
+
+    <p>When making a new MVC 6 project that'll serve primarily as an API/Service, I'll create a solution with versioning
+        in mind. I'll first create a project (it doesn't really matter what kind of project) called something like
+        Acme.Disgronifier where Acme is the company name/acronym and Disgronifier is the service/API title.</p>
+
+    <ol>
+        <li>Open Visual Studio 2015</li>
+        <li>Click File-&lt;New-&lt;Project...</li>
+        <li>Verify that the Location value is wherever your source control is currently mapped if you are using TFS</li>
+        <li>In the Project Name type Acme.Disgronifier, Click OK.</li>
+    </ol>
+    <p>The solution will look something like this:</p>
+
+    <img src="screenshot1.png" alt="Acme.Disgronifier"/>
+
+    <p>Then I remove the project from the solution because it was really just there to get the correct solution and
+        folder name (right click the project in Solution Explorer, click Remove). You can also delete it from the
+        hard drive too. Next I add in a solution folder 1.0/src.</p>
+
+    <ol>
+        <li>Right click the solution in Solution Explorer, click Add-&lt; New Solution Folder</li>
+        <li>Type 1.0, hit [Enter]</li>
+        <li>Right Click 1.0, click Add-&lt;New Solution Folder</li>
+        <li>Type src, hit [Enter]</li>
+    </ol>
+
+    <p>In the 1.0/src folder I add another project named Acme.Disgronifier.Api, this time it's specifically a web
+        project using the ASP.NET Web Application template. I'll add two more projects to the 1.0 folder, this time
+        Class (Package) projects, Acme.Disgronifier.Client and Acme.Disgronifier.Common. The
+        Acme.Disgronifier.Common project will hold those classes that both the API and the Client both reference,
+        like DTO classes.</p>
+
+    <ol>
+        <li>Add Api project<br/>
+            <ol>
+                <li>Right click the 1.0/src folder in Solution Explorer, click Add-&lt;New Project</li>
+                <li>Select ASP.Net Web Application</li>
+                <li>In the Name field, enter Acme.Disgronifier.Api</li>
+                <li>Make sure the location ends with Acme.Disgronifier\1.0\src</li>
+                <li>Click OK</li>
+                <li>Select Web API under ASP.NET Templates</li>
+                <li>Click OK</li>
+            </ol>
+        </li>
+        <li>Add Client project<br/>
+            <ol>
+                <li>Right click the 1.0/src folder in Solution Explorer, click Add-&lt;New Project</li>
+                <li>Select Class Library (Package)</li>
+                <li>In the Name field, enter Acme.Disgronifier.Client</li>
+                <li>Make sure the location ends with Acme.Disgronifier\1.0\src</li>
+                <li>Click OK</li>
+            </ol>
+        </li>
+        <li>Add Common project<br/>
+            <ol>
+                <li>Right click the 1.0/src folder in Solution Explorer, click Add-&lt;New Project</li>
+                <li>Select Class Library (Package)</li>
+                <li>In the Name field, enter Acme.Disgronifier.Common</li>
+                <li>Make sure the location ends with Acme.Disgronifier\1.0\src</li>
+                <li>Click OK</li>
+            </ol>
+        </li>
+    </ol>
+
+    <p>At this point, the solution should look like this:</p>
+
+    <img src="screenshot2.png" alt="Acme.Disgronifier.Common"/>
+
+    <p>The point of the API project is to serve as a service/business layer application between the UI and DB layers.
+        The endpoints it defines should be considered contractual. Non-.Net application may interface with them. If a
+        breaking change must occur, you should add a new 2.0 folder to the solution and create a new API for this
+        breaking change. You can read more about Restful API versioning <a
+                href="http://codebetter.com/howarddierking/2012/11/09/versioning-restful-services/">here</a>. When this
+        occurs, I remind the business that it is in their best interest to deprecate the older version as soon as
+        possible because maintaining both versions costs us time in development.</p>
+
+    <p>The point of the Client project is to serve as a simple proxy with perhaps a little business knowledge. It mainly
+        exists to make .Net developer's lives easier so that they don't have to know the specifics of the API routes,
+        verbs, etc. just to do things like <a
+                href="https://en.wikipedia.org/wiki/Create,_read,_update_and_delete">CRUD</a> operations on some <a
+                href="https://en.wikipedia.org/wiki/Data_transfer_object">DTO</a> exposed by the API.</p>
+
+    <p>The Common project exists to hold those classes that exist in common between the Client and API projects. I'm
+        usually storing <a href="https://en.wikipedia.org/wiki/Data_transfer_object">DTO</a> classes in this project.
+    </p>
+
+    <p>Both the Common and Client projects will be distributed to other projects as Nuget packages. If time permits, I
+        will blog about that later.</p>
+
+    <p>Additionally, I need projects that interface with those parts of the business that can't be versioned. Projects
+        like this might be database layer projects or other Disgronifier-centric projects that cannot be versioned. Of
+        all the projects I've ever worked on, we've only ever had one instance of the database in any particular
+        environment, so there was never any Database 2.0 to communicate with. If someone added or removed a column, APIs
+        1.0 and 2.0 all had to adapt to handle this new schema. It's this kind of cross-version common code for which
+        I'm creating a project. I add a new folder to the solution, Common/src.</p>
+
+    <ol>
+        <li>Right click the solution in Solution Explorer, click Add-&lt; New Solution Folder</li>
+        <li>Type Common, hit [Enter]</li>
+        <li>Right Click Common, click Add-&lt;New Solution Folder</li>
+        <li>Type src, hit [Enter]</li>
+    </ol>
+    <p>Then I add a new project for my database layer, Acme.Disgronifier.EF.</p>
+
+    <ol>
+        <li>Right click the Common/src folder in Solution Explorer, click Add-&lt;New Project</li>
+        <li>Select Class Library (Package)</li>
+        <li>In the Name field, enter Acme.Disgronifier.EF</li>
+        <li>Make sure the location ends with Acme.Disgronifier\Common\src</li>
+        <li>Click OK</li>
+    </ol>
+    <p>At this point the solution should look like this:</p>
+
+    <img src="screenshot3.png" alt="Acme.Disgronifier.EF"/>
+
+    <p>It might also be clear based on the name that I plan on using the Entity Framework in my Acme.Disgronifier.EF
+        project. I do. I may get into the specifics of how to set that project up in a later blog post.</p>
+
+    <p>Now, I strongly advocate that every developer practice TDD. So before I write a single line of code, I want to
+        have my test projects in place. I go ahead and add test projects to my solution at this point.</p>
+
+    <ol>
+        <li>Right click the 1.0 folder in Solution Explorer, click Add-&lt; New Solution Folder</li>
+        <li>Type test, hit [Enter]</li>
+        <li>Right Click Common, click Add-&lt;New Solution Folder</li>
+        <li>Type test, hit [Enter]</li>
+        <li>Right click 1.0/test, click Add-&lt;New Project...</li>
+        <li>Select xUnit Test Project (DNX) (under Visual C#/Web)</li>
+        <li>In the Name field, enter Acme.Disgronifier.Api.Tests</li>
+        <li>Make sure the location ends with Acme.Disgronifier\1.0\test</li>
+        <li>Click OK</li>
+        <li>Right click 1.0/test, click Add-&lt;New Project...</li>
+        <li>Select xUnit Test Project (DNX) (under Visual C#/Web)</li>
+        <li>In the Name field, enter Acme.Disgronifier.Client.Tests</li>
+        <li>Make sure the location ends with Acme.Disgronifier\1.0\test</li>
+        <li>Click OK</li>
+        <li>Right click Common/test, click Add-&lt;New Project...</li>
+        <li>Select xUnit Test Project (DNX) (under Visual C#/Web)</li>
+        <li>In the Name field, enter Acme.Disgronifier.EF.Tests</li>
+        <li>Make sure the location ends with Acme.Disgronifier\Common\test</li>
+        <li>Click OK</li>
+    </ol>
+    <p>At this point your solution should look like:</p>
+
+    <img src="screenshot4.png" alt="Acme.Disgronifier.Common.Test"/>
+
+    <p>I might have added a Acme.Disgronifier.Common.Tests project, but I'm not going to unless I actually find myself
+        putting logic in that library, which I rarely do. I always try to hold off on adding projects/code unless I can
+        determine that I actually will need them.</p>
+
+    <p>DNX projects don't yet have MS Test support which is certainly curious. Thankfully the xUnit team has stepped up
+        and filled that gap, and learning to use <a href="http://xunit.github.io/">xUnit</a> isn't too bad of a learning
+        curve. That is why I write to create xUnit test projects.</p>
+
+    <p>At this point, my solution is mostly set. I now need to tweak my projects.</p>
+
+    <ol>
+        <li>Set my projects to reference each other<br/>
+            <ol>
+                <li>Set Acme.Disgronifier.Api references<br/>
+                    <ol>
+                        <li>Right click the Acme.Disgronifier.Api project, click Add-&lt;Reference...</li>
+                        <li>Check Acme.Disgronifier.Common</li>
+                        <li>Check Acme.Disgronifier.EF</li>
+                        <li>Click OK</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.Client references<br/>
+                    <ol>
+                        <li>Right click the Acme.Disgronifier.Client project, click Add-&lt;Reference...</li>
+                        <li>Check Acme.Disgronifier.Common</li>
+                        <li>Click OK</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.Api.Tests references<br/>
+                    <ol>
+                        <li>Right click the Acme.Disgronifier.Api.Tests project, click Add-&lt;Reference...</li>
+                        <li>Check Acme.Disgronifier.Api</li>
+                        <li>Click OK</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.Client.Tests references<br/>
+                    <ol>
+                        <li>Right click the Acme.Disgronifier.Client.Tests project, click Add-&lt;Reference...</li>
+                        <li>Check Acme.Disgronifier.Client</li>
+                        <li>Click OK</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.EF.Tests references<br/>
+                    <ol>
+                        <li>Right click the Acme.Disgronifier.EF.Tests project, click Add-&lt;Reference...</li>
+                        <li>Check Acme.Disgronifier.EF</li>
+                        <li>Click OK</li>
+                    </ol>
+                </li>
+            </ol>
+        </li>
+        <li>Set project frameworks<br/>
+            <ol>
+                <li>Set Acme.Disgronifier.Client frameworks<br/>
+                    <ol>
+                        <li>Double click the project.json file in the Acme.Disgronifier.Client project</li>
+                        <li>Remove the whole "dotnet5.4" section</li>
+                        <li>Save the file</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.Common frameworks<br/>
+                    <ol>
+                        <li>Double click the project.json file in the Acme.Disgronifier.Common project</li>
+                        <li>Remove the whole "dotnet5.4" section</li>
+                        <li>Save the file</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.Api frameworks<br/>
+                    <ol>
+                        <li>Double click the project.json file in the Acme.Disgronifier.Api project</li>
+                        <li>Remove the whole "dnxcore50" section</li>
+                        <li>Save the file</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.Api.Tests frameworks<br/>
+                    <ol>
+                        <li>Double click the project.json file in the Acme.Disgronifier.Api.Tests project</li>
+                        <li>Remove the whole "dnxcore50" section</li>
+                        <li>Save the file</li>
+                    </ol>
+                </li>
+                <li>Set Acme.Disgronifier.Client.Tests frameworks<br/>
+                    <ol>
+                        <li>Double click the project.json file in the Acme.Disgronifier.Client.Tests project</li>
+                        <li>Remove the whole "dnxcore50" section</li>
+                        <li>Save the file</li>
+                    </ol>
+                </li>
+            </ol>
+        </li>
+        <li>Add Nuget packages<br/>
+            <ol>
+                <li>Right click the solution and click Manage NuGet Packages for Solution</li>
+                <li>Click Browse</li>
+                <li>Make sure that the package source is set to NuGet.org</li>
+                <li>Add Moq to test projects<br/>
+                    <ol>
+                        <li>In the search box type Moq and select Moq by Daniel Cazzulino</li>
+                        <li>Check Acme.Disgronifier.Api.Tests</li>
+                        <li>Check Acme.Disgronifier.Client.Tests</li>
+                        <li>Check Acme.Disgronifier.EF.Tests</li>
+                        <li>Click Install</li>
+                        <li>Click OK</li>
+                    </ol>
+                </li>
+                <li>Add FluentAssertions to test projects<br/>
+                    <ol>
+                        <li>In the search box type FluentAssertions and select FluentAssertions</li>
+                        <li>Check Acme.Disgronifier.Api.Tests</li>
+                        <li>Check Acme.Disgronifier.Client.Tests</li>
+                        <li>Check Acme.Disgronifier.EF.Tests</li>
+                        <li>Click Install</li>
+                        <li>Click OK</li>
+                    </ol>
+                </li>
+            </ol>
+        </li>
+        <li>Make internal classes in projects under test visible to test projects<br/>
+            <ol>
+                <li>Add InternalsVisibleTo to Api project<br/>
+                    <ol>
+                        <li>Right click Acme.Disgronifier.Api project in the Solution Explorer, click Add-&lt;Class...                        </li>
+                        <li>Type AssemblyInfo and click Add</li>
+                        <li>Delete all the text of the pre-generated file</li>
+                        <li>Type 'using System.Runtime.CompilerServices;' at the top of the file</li>
+                        <li>Drop a line and type '[assembly: InternalsVisibleTo("Acme.Disgronifier.EF.Tests")]</li>
+                        <li>Drop a line and type '[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]</li>
+                        <li>Save the file</li>
+                        <li>Drag the file to the project's Properties folder</li>
+                    </ol>
+                <li>Add InternalsVisibleTo to Client project<br/>
+                    <ol>
+                        <li>Right click Acme.Disgronifier.Client project in the Solution Explorer, click Add-&lt;Class...</li>
+                        <li>Type AssemblyInfo and click Add</li>
+                        <li>Delete all the text of the pre-generated file</li>
+                        <li>Type 'using System.Runtime.CompilerServices;' at the top of the file</li>
+                        <li>Drop a line and type '[assembly: InternalsVisibleTo("Acme.Disgronifier.EF.Tests")]</li>
+                        <li>Drop a line and type '[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]</li>
+                        <li>Save the file
+                        <li>Drag the file to the project's Properties folder</li>
+                    </ol>
+                </li>
+                <li>Add InternalsVisibleTo to EF project<br/>
+                    <ol>
+                        <li>Right click Acme.Disgronifier.EF project in the Solution Explorer, click Add-&lt;Class...                        </li>
+                        <li>Type AssemblyInfo and click Add</li>
+                        <li>Delete all the text of the pre-generated file</li>
+                        <li>Type 'using System.Runtime.CompilerServices;' at the top of the file</li>
+                        <li>Drop a line and type '[assembly: InternalsVisbibleTo("Acme.Disgronifier.EF.Tests")]</li>
+                        <li>Drop a line and type '[assembly: InternalsVisbibleTo("DynamicProxyGenAssembly2")]</li>
+                        <li>Save the file</li>
+                        <li>Drag the file to the project's Properties folder</li>
+                    </ol>
+                </li>
+            </ol>
+        </li>
+    </ol>
+    <p>Removing support for "dotnet5.4" and "dnxcore50" is optional, but I've found it much more convenient to do that
+        than to support it of late. There are too many libraries I depend on (e.g. <a
+                href="https://github.com/AutoMapper/AutoMapper/issues/1124">Automapper</a>) that just don't support
+        dotnet5.4 yet.</p>
+
+    <p>There is a good chance that you see an error instructing you to run "dnu restore" on something after modifying
+        these project.json files. If you see that, you can resolve it be individually selecting each project in Solution
+        Explorer, right clicking the project, and clicking Restore Packages.</p>
+
+    <p>I add FluentAssertions to every test project to help improve the readability of m test assertions. I add Moq to
+        all my test projects because I inevitably need to mock/stub/fake classes in the projects under test.</p>
+
+    <p>The InternalsVisibleTo lines help a test project see classes/properties/methods that are necessary for the
+        process of testing, but are not intended for general use outside of the library. This may not initially be clear
+        why this is helpful, but if you practice <a
+                href="http://www.butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">TDD</a> for a little while,
+        you'll find that separation of concerns and the <a
+                href="http://blog.8thlight.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html">single
+            responsibility</a> principle will cause you to break up classes to make them easier to test. But you may
+        still couple classes through internal <a
+                href="https://en.wikipedia.org/wiki/Dependency_injection#Constructor_injection">constructor
+            injection</a> or <a href="https://en.wikipedia.org/wiki/Dependency_injection#Setter_injection">setter
+            injection</a> if the classes are truly coupled. For example, I had written a "SprocketClient" class on one
+        job, and within that SprocketClient I tested that the input data was properly formatted, transported to the
+        server and the responses properly handled. Because the logic for the formatting was relatively complicated, I
+        broke that logic out to a "SprocketRequestFormatter" class to be tested separately. There are any number of
+        reasons that the format of the message could have changed (and it did over time), but the client logic remained
+        pretty stable. For that reason the formatter warranted its own class and tests. The client was coupled to the
+        formatter internally. No one outside of the library could hope to talk to the server in any format except the
+        one the server was prepared to accept which was defined in the formatter class. But for the purposes of testing,
+        I could substitute the formatter with a stubbed version using the Moq framework to verify that the rest of the
+        client class still behaved as expected. This may not initially make a lot of sense, but it's helpful if you
+        stick with <a href="http://blog.cleancoder.com/uncle-bob/2014/12/17/TheCyclesOfTDD.html">TDD</a>.</p>
+
+    <p>At this point our solution is ready for feature additions. I'd check it into source control.</p>
+</article>
+</body>
+</html>
