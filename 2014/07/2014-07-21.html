@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Building VS2013 with a TFS2012 build agent</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Building VS2013 with a TFS2012 build agent</h1>
+    <p>If you're like me, and I know I am, you've probably tried to make a TFS 2012 build agent build a VS2013 web
+        project. You inevitably received this error from the build agent:</p>
+
+    <samp>D:\Builds\1\Acme\Acme.Web.Api\Sources\Acme.Web.Api\Acme.Web.Api.csproj (407): The imported project "C:\Program
+        Files (x86)\MSBuild\Microsoft\VisualStudio\v11.0\WebApplications\Microsoft.WebApplication.targets" was not
+        found. Confirm that the path in the &lt;Import&gt; declaration is correct, and that the file exists on
+        disk.<br/>
+        This is because of course you have VS2013 installed on your build agent machine, but you are using a VS2012
+        build agent to build a this project.</samp>
+
+    <p>You can google lots of terrible answers including modifying the xml in the csproj file. If at all possible, I'd
+        prefer not to modify the project since the problem looks like a build agent issue; the VS2013 project is going
+        to be built by VS2013, so why change the project?</p>
+
+    <p>In this case, the correct answer appears to be the less up-voted answer on <a
+            href="http://stackoverflow.com/questions/19718281/external-vs2013-build-error-error-msb4019-the-imported-project-path-was-not">stackoverflow</a>
+        by <a href="http://stackoverflow.com/users/801005/ralph-jansen">Ralph Jansen</a>: Add <strong>/p:VisualStudioVersion=12.0</strong>
+        to the MSBuild Arguments option in the Build Definition.</p>
+
+    <ol>
+        <li>Go to Team Explorer</li>
+        <li>Select Build</li>
+        <li>Select the build definition to modify</li>
+        <li>Select Process</li>
+        <li>Expand Advanced</li>
+        <li>Add /p:VisualStudioVersion=12.0 to MSBuild Arguments</li>
+    </ol>
+
+    <img src="define%20vsversion%20in%20msbuild%20args.png" alt="MSBuild args">
+
+    <p>Save your build definition. Now go ahead and re-queue a build again, and your problem is likely solved.</p>
+</article>
+
+<h2>Comments</h2>
+<ul>
+    <li>
+        <p><a href="https://www.blogger.com/profile/18395372161906185722">ffff</a> April 15, 2015 at 9:53 AM</p>
+        <p>it did not work for me , getting the same error again and again</p>
+        <ul>
+            <li>
+                <p><a href="https://www.blogger.com/profile/03206943530699015630">Whale Biologist - Tom Adams</a> April 15, 2015 at 5:38 PM</p>
+                <p>Have you tried other version numbers? Perhaps your environment differs from mine.</p>
+            </li>
+        </ul>
+    </li>
+</ul>
+</body>
+</html>

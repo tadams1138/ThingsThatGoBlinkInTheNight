@@ -9,7 +9,7 @@ a:visited {
 body {
     background-color: #2b2b2b;
     color: #A9B7C6;
-    margin: 20px;
+    margin: 1%;
 }
 
 h1 {
@@ -18,7 +18,7 @@ h1 {
 
 img {
     display: block;
-    max-width: 80%;
+    max-width: 68%;
     max-height: 500px;
     margin-left: auto;
     margin-right: auto;
@@ -42,6 +42,6 @@ pre {
 .navigation {
     float: right;
     background: #3c3f41;
-    margin-left: 20px;
-    width: 300px;
+    margin-left: 1%;
+    width: 29%;
 }

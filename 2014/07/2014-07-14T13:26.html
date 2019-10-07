@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Formatting Hypermedia Link Properties into Atributes in .Net Web API</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Formatting Hypermedia Link Properties into Atributes in .Net Web API</h1>
+    <p>If you're like me, and I know I am, you've been playing around with .Net Web API for a little while now. In an
+        attempt to create Hypermedia where your returned objects include lots of links to related things or actions, you
+        probably created a Link class that looked something like this:</p>
+
+    <pre><code class="csharp">    public class Link
+    {
+        public string Rel { get; set; }
+        public string Href { get; set; }
+        public string Method { get; set; }
+    }</code></pre>
+
+    <p>And you probably included this class as a property of some other more significant class like this:</p>
+
+    <pre><code class="csharp">    public class Task
+    {
+        public long? TaskId{ get; set; }
+        public List&lt;Link&gt; Links { get; set; }
+        public string Status { get; set; }
+    }</code></pre>
+
+    <p>Now what you had hoped you were creating probably looked like:</p>
+
+    <pre><code class="xml">&lt;Task xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.datacontract.org/2004/07/Acme.Web.Api.Models"&gt;
+ &lt;TaskId&gt;1&lt;/TaskId&gt;
+ &lt;Links&gt;
+  &lt;Link Href="/Tasks/1" Method="GET" Rel="self"&gt;&lt;/Link&gt;
+ &lt;/Links&gt;
+ &lt;Status&gt;Beginning Import&lt;/Status&gt;
+&lt;/Task&gt;</code></pre>
+
+    <p>But then you were sorely kind of disappointed when your output looked like:</p>
+
+    <pre><code class="xml">&lt;Task xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.datacontract.org/2004/07/Acme.Web.Api.Models"&gt;
+ &lt;TaskId&gt;1&lt;/TaskId&gt;
+ &lt;Links&gt;
+  &lt;Link&gt;
+   &lt;Href&gt;/Tasks/1&lt;/Href&gt;
+   &lt;Method&gt;GET&lt;/Method&gt;
+   &lt;Rel&gt;self&lt;/Rel&gt;
+  &lt;/Link&gt;
+ &lt;/Links&gt;
+ &lt;Status&gt;Beginning Import&lt;/Status&gt;
+&lt;/Task&gt;</code></pre>
+
+    <p>Well fear not for <a href="http://lordzoltan.blogspot.com/2010/09/serializing-to-attributes-in-wcf-with.html">Lord
+        Zoltan has the solution</a>.</p>
+
+    <p>Simply implement <code class="csharp">IXmlSerializable</code>.</p>
+
+    <p>Solution:</p>
+
+    <pre><code class="csharp">    public class Link : IXmlSerializable
+    {
+        public string Rel { get; set; }
+        public string Href { get; set; }
+        public string Method { get; set; }
+        public XmlSchema GetSchema()
+        {
+            return null;
+        }
+        public void ReadXml(XmlReader reader)
+        {
+        }
+        public void WriteXml(XmlWriter writer)
+        {
+            writer.WriteAttributeString("rel", Rel);
+            writer.WriteAttributeString("href", Href);
+            writer.WriteAttributeString("method", Method);
+        }
+    }</code></pre>
+
+    <p>Now whether or not that is it for implementing Hypermedia in your Web API, I'm not going to say that. But I
+        certainly am one step closer at least as far as formatting is concerned. I still have more to read up on fun
+        little keywords like HAL.</p>
+</article>
+</body>
+</html>

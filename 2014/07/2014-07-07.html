@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Segregating Integration tests from Unit tests in VS2013</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Segregating Integration tests from Unit tests in VS2013</h1>
+    <p>If you're like me, and I know I am, you want to run your unit tests as often and as quickly as possible. You also
+        need integration tests to verify that the overall system works as intended. I let the TFS build agent run the
+        whole suite of tests either upon every check-in or on a schedule depending upon the project. But I don't want to
+        segregate out the integration tests from the test projects necessarily. Do I really want an
+        Acme.Web.Api.UnitTests project and an Acme.Web.Api.IntegrationTests? I think I'd prefer an Acme.Web.Api.Tests
+        project with both unit tests, integration tests or any other tests inside that library.</p>
+
+    <p>So how do I get the quick turnaround whenever I run all tests (Ctrl+R, A)?</p>
+
+    <p>I found that I can categorize the tests via the [TestCategory] attribute and then filter them out in the Test
+        Explorer window. Like this:</p>
+
+    <img src="segregating%20integration%20tests.png" alt="Test category filtering">
+
+    <p>So now I can quickly run all tests (Ctrl+R, A) sans the tests marked "Integration" without separating out the
+        integration tests from the solution or worse, disabling integration tests until I'm "ready." The build agent
+        machine will never know about my filter since that is information not saved to TFS. My local system however will
+        remember my filter so that I can quickly select my filter from the filter drop down in Test Explorer every time
+        I start up Visual Studio 2013.</p>
+</article>
+</body>
+</html>
