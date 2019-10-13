@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Running Unit Tests When TFS Build Definition Output Location is AsConfigured</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Running Unit Tests When TFS Build Definition Output Location is AsConfigured</h1>
+    <del><p>I only just recently noticed that no tests were running for a couple of build definitions whose <strong>Output
+        location</strong> was set to <strong>AsConfigured</strong>. I have a good reason to have the build definition
+        set this way, but that is beside the point. The point is that the regular pattern set in <strong>Test source
+            spec **\*test*.dll;**\*test*.appx</strong> was not finding any test libraries. Well, that's because the root
+        folder defined by that pattern is the \bin folder for the build agent when what you need it to look in is the
+        \src folder. I found the quick fix for this <a href="http://stackoverflow.com/users/225680/y-shoham">Y.
+            Shoham</a> on <a
+                href="http://stackoverflow.com/questions/24208054/using-asconfigured-and-still-be-able-to-get-unittest-results-in-tfs">stackoverflow</a>.
+        Use the following pattern in the <strong>Test source spec field</strong> of your build definition:</p>
+
+        <p>..\src\**\*test*.dll;..\src\**\*test*.appx</p>
+
+        <p>Now it should be able to find all test libraries when the <strong>Output location</strong> of your build
+            definition is set to <strong>AsConfigured</strong>.</p></del>
+
+    <p>Disregard everything I wrote. You will have a problem where test libraries in the <strong>obj</strong> folder
+        will be run too, and those tests will fail. I have not been able to find a way to easily exclude the
+        <strong>obj</strong> folder from the path I specify. I am forced to build all solution projects to one folder
+        for now just like the <strong>Output location</strong> values <strong>SingleFolder</strong> and <strong>PerProject</strong>
+        produce.</p>
+</article>
+</body>
+</html>

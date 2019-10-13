@@ -16,6 +16,12 @@ h1 {
     color: #AE8ABE;
 }
 
+iframe {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 img {
     display: block;
     max-width: 68%;
@@ -43,5 +49,6 @@ pre {
     float: right;
     background: #3c3f41;
     margin-left: 1%;
+    min-height: 482px; /*TODO: find out how to get the layout to reflow after the links load*/
     width: 29%;
 }

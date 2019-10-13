@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Debugging exceptions in other applications</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Debugging exceptions in other applications</h1>
+    <p>I had this recently happen that I referenced a custom library in the configuration of the <a
+            href="https://slab.codeplex.com/">Semantic Logging Out of Process service</a> only to have an exception get
+        thrown by the service. Unfortunately the ReflectionTypeLoadException output to the console screen lacked
+        critical details not relayed by the ToString method. Rather than trying to debug exactly which of the dozens of
+        libraries being referenced was somehow unloadable, I found a way to get at the exception. If you are lucky, this
+        method may work for you too.</p>
+
+    <p>I created a console application that referenced the semantic logging out of process service. I copied all the
+        files the semantic logging out of process service needs to the bin\Debug folder of the project as well. That way
+        when I debug the console application, I'd be able to simulate exactly the kind of behavior it would have had
+        with all the same configuration and libraries present and with only the addition of my console application
+        referencing the executable reporting the error.</p>
+
+    <p>I used <a href="https://www.jetbrains.com/decompiler/">DotPeek</a> to snoop around the executable to determine a
+        good code entry point. And this is where I got lucky. If every class in the semantic logging out of process
+        service was internal for instance, I would have had no chance of debugging this the way I am currently
+        describing. In the end, I was able to find the class (TraceEventServiceHost) and method (OnStart) that is called
+        when the service is run in console mode and I was able to call them because the class was public and not sealed:
+    </p>
+
+    <pre><code class="csharp">using System;
+using System.Reflection;
+using Microsoft.Practices.EnterpriseLibrary.SemanticLogging.Etw.Service;
+namespace ConsoleApplication1
+{
+    internal class Program
+    {
+        private static void Main(string[] args)
+        {
+            try
+            {
+                using (var eventServiceHost = new wrapper())
+                {
+                    eventServiceHost.Start();
+                    Console.ReadLine();
+                }
+            }
+            catch (ReflectionTypeLoadException ex1)
+            {
+                var loaderExceptions = ex1.LoaderExceptions;
+                foreach (var e in loaderExceptions)
+                {
+                    Console.WriteLine(e);
+                }
+                Console.WriteLine(ex1.ToString());
+                Console.ReadLine();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                Console.ReadLine();
+            }
+        }
+        private class wrapper : TraceEventServiceHost
+        {
+            public void Start()
+            {
+                base.OnStart(null);
+            }
+        }
+    }
+}</code></pre>
+
+    Additionally, I found that the OnStart method was actually protected, so I wrote a class to inherit from
+    TraceEventServiceHost and call the OnStart method.
+
+    I added exception catching for the ReflectionTypeLoadException so that I could finally see the contents of the
+    LoaderExceptions property. When I debugged this application, I was able to catch the exception in question and
+    output the additional details. The new details included exceptions saying that the correct versions of
+    Microsoft.Owin, Microsoft.Owin.Security and Newtonsoft.Json could not be found. This led me to realize that I was
+    missing binding redirects in the SemanticLogging-svc.exe.config that were now necessary since I added a custom sink.
+
+    I was quickly able to add the following to the SemanticLogging-svc.exe.config:
+
+    <pre><code class="xml">&lt;configuration&gt;
+  &lt;runtime&gt;
+    &lt;gcServer enabled="true" /&gt;
+    &lt;gcConcurrent enabled="true" /&gt;
+    &lt;assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1"&gt;
+      &lt;dependentAssembly&gt;
+        &lt;assemblyIdentity name="Microsoft.Owin.Security" publicKeyToken="31bf3856ad364e35" culture="neutral" /&gt;
+        &lt;bindingRedirect oldVersion="0.0.0.0-3.0.0.0" newVersion="3.0.0.0" /&gt;
+      &lt;/dependentAssembly&gt;
+      &lt;dependentAssembly&gt;
+        &lt;assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral"/&gt;
+        &lt;bindingRedirect oldVersion="0.0.0.0-6.0.0.0" newVersion="6.0.0.0"/&gt;
+      &lt;/dependentAssembly&gt;
+      &lt;dependentAssembly&gt;
+        &lt;assemblyIdentity name="Microsoft.Owin" publicKeyToken="31bf3856ad364e35" culture="neutral" /&gt;
+        &lt;bindingRedirect oldVersion="0.0.0.0-3.0.0.0" newVersion="3.0.0.0" /&gt;
+      &lt;/dependentAssembly&gt;
+    &lt;/assemblyBinding&gt;
+  &lt;/runtime&gt;
+&lt;/configuration&gt;</code></pre>
+
+    <p>After rerunning the service, no exceptions were thrown. Problem solved.</p>
+
+    <p>I have since submitted a <a
+            href="https://slab.codeplex.com/SourceControl/network/forks/tadams1138/ErrorDetails/contribution/7989">pull
+        request</a> to the Semantic Logging Application Block project on codeplex to enhance the error output of the
+        Semantic Logging out of process service.</p>
+
+    <p>Corrected: <a href="https://github.com/mspnp/semantic-logging/pull/2">pull request</a> is now on github.</p>
+
+</article>
+
+<h2>Comments</h2>
+<ul>
+    <li>
+        <p><a href="https://www.blogger.com/profile/07959596000840042109">dave falkner</a> July 14, 2015 at 7:13 PM</p>
+        <p>This is an excellent, excellent help, and I hope that your pull request makes it into production soon.</p>
+    </li>
+</ul>
+</body>
+</html>

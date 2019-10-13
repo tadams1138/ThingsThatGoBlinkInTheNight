@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restricting Bad Websites in IE After IT has Applied Group Policy</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Restricting Bad Websites in IE After IT has Applied Group Policy</h1>
+    <p>In case you didn't already know, you can block poorly made sites from running JavaScript/Flash/etc. in Internet
+        Explorer by <a href="http://support.microsoft.com/kb/174360">adding them to the Restricted Sites security
+            zone</a>. In 8 clicks (I know it's a lot, but I usually only have to use it once), I can prevent a site from
+        running all those obnoxious ads and scripts and let me just read the content. I've been able to block Drudge
+        Report's meta refresh and WashingtonTimes's ads.</p>
+
+    <p>Why not use Browser X which is vastly superior to IE in every way, you ask? Because I'm not a browser fan-boy,
+        that's why. I don't feel like installing a new browser on every machine I own or use. IE favorites and settings
+        sync across my devices, and I like this feature. Also, your "my browser is faster!" claim has not been a
+        human-measurable value since IE 6. More than likely your intense hatred for IE is based soley on your experience
+        with IE 6 which is kind of irrational when you consider they are on version 11. Nothing against other browsers
+        (except Firefox, you suck as a company!), but IE is a perfectly cromulent browser that grandma can use. There is
+        no need to force grandma to download a new browser, you weird browser fanboys.</p>
+
+    <p>This was all working just fine for me until our IT dept decided to add my company laptop to the domain and group
+        policy took away my ability to add sites to the Restricted Sites security zone. Well, I found a way around this,
+        and it looks like I might be able to add sites in fewer clicks if I automate this process a little. My logon is
+        a local administrator account on my laptop, and that may be a requirement to follow these steps.</p>
+
+    <ol>
+        <li>Run Internet Explorer as Administrator<br/>
+            <ol>
+                <li>Right click Internet Explorer icon in the taskbar</li>
+                <li>Right click Internet Explorer in the context menu</li>
+                <li>Click Properties<br/>
+                    <img src="1.png" alt="Run as administrator"></li>
+                <li>Under the Shortcut tab, click Advanced<br/>
+                    <img src="2.png" alt="Internet Explorer Properties"></li>
+                <li>Check Run as administrator<br/>
+                    <img src="3.png" alt="Advanced Properties"></li>
+                <li>Click OK</li>
+                <li>Click OK</li>
+            </ol>
+        </li>
+        <li>Add sites to the Restricted Sites zone registry key<br/>
+            <ol>
+                <li>Type <strong>regedit.exe</strong> at the Start menu and hit [Enter]</li>
+                <li>Navigate to HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\Internet
+                    Settings\ZoneMap\Domains
+                </li>
+                <li>Right click Domains, click New->Key<br/>
+                    <img src="4.png" alt="new key"></li>
+                <li>Name the new key after the domain name to restrict (e.g. washingtontimes.com)</li>
+                <li>Select this new key and right click inside the right pane, click New->DWORD (32-bit) Value<br/>
+                    <img src="5.png" alt="new DWORD"></li>
+                <li>Name this new value the protocol you want to restrict (e.g. http, https, etc.)</li>
+                <li>Double click this value to open the Edit DWORD (32-bit) Value dialog<br/>
+                    <img src="6.png" alt="Edit DWORD"></li>
+                <li>Change Value data to 4, and click OK.</li>
+            </ol>
+        </li>
+    </ol>
+
+    <p>The next time you visit a domain listed now in your registry, you should notice that it isn't running JavaScript
+        or other time consuming, annoying features.</p>
+
+    <p>I hope to automated the addition of sites to my registry in the near future. I'll blog about it if I do.</p>
+
+    <h2>Update (2015-01-23):</h2>
+
+    <p>Apparently I need to block group policy from changing my registry values too.</p>
+    <p>Open up regedit.exe again</p>
+    <ol>
+        <li>Right click HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\Internet
+            Settings\ZoneMap\Domains and clicked on <strong>Permissions...</strong> from the context menu.
+        </li>
+        <li>Click on <strong>Advanced</strong>.</li>
+        <li>Click <strong>Disable inheritance</strong> and select <strong>Convert inherited permissions into explicit
+            permissions on this object</strong>.
+        </li>
+        <li>Click the <strong>SYSTEM</strong> account and the <strong>Edit</strong> button.</li>
+        <li>Uncheck <strong>Full Control</strong> and click <strong>OK</strong>.</li>
+        <li>Click <strong>Change</strong> at the top next to <strong>Owner: SYSTEM</strong>.</li>
+        <li>Click <strong>Locations</strong> and set the location to your local machine.</li>
+        <li>Enter <strong>Administrators</strong> into the dialog box and click <strong>OK</strong>.</li>
+        <li>Check <strong>Replace owner on subcontainers and objects</strong> and click <strong>OK</strong>.</li>
+        <li>Click <strong>OK</strong> again.</li>
+    </ol>
+    <p>I'll let you know if that doesn't prevent group policy from overwriting my entries.</p>
+
+    <h2>Update (2015-02-04)</h2>
+
+    <p>Apparently that didn't work either. I'm going to further restrict SYSTEM and let you know how that goes.</p>
+
+    <ol>
+        <li>Follow all the previously mentioned steps if it looks like your registry changes have been reverted.</li>
+        <li>Right click HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\Internet
+            Settings\ZoneMap\Domains and clicked on <strong>Permissions...</strong> from the context menu.
+        </li>
+        <li>Click on <strong>Advanced</strong>.</li>
+        <li>Click the <strong>SYSTEM</strong> account and the <strong>Edit</strong> button.</li>
+        <li>Change Type to <strong>Deny</strong>.</li>
+        <li>Click Show Advanced Permissions and check <strong>Set Value</strong>, <strong>Create Subkey</strong>,
+            <strong>Create Link</strong>, <strong>Delete</strong>, <strong>Write DAC</strong>, <strong>Write
+                Owner</strong>.
+        </li>
+        <li>Click <strong>OK</strong>.</li>
+        <li>Click <strong>Add</strong>, click <strong>Select a Principal</strong>, set location to your local machine,
+            enter <strong>SYSTEM</strong> where it says <strong>Enter the object name to select (examples):</strong> and
+            click <strong>OK</strong>.
+        </li>
+        <li>Check <strong>Read</strong> and click <strong>OK</strong>.</li>
+        <li>Click <strong>OK</strong> and <strong>OK</strong>.</li>
+    </ol>
+    <p>You should now have denied the SYSTEM account all ability to alter the Domains registry key as well as any child
+        nodes, but it should still be able to read it.</p>
+
+</article>
+</body>
+</html>
