@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adventures in upgrading to TFS to 2015</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Adventures in upgrading to TFS to 2015</h1>
+    <p>This is the chronological order of problems I encountered as I upgraded our build infrastructure from TFS 2013 to
+        TFS 2015.</p>
+
+    <p><strong>Problem:</strong> TFS 2015 does not have a build controller like TFS 2013 and can't run the old XAML
+        build definitions.<br/>
+
+        <strong>Solution:</strong> Leave Installed/Install/Re-Install TFS 2013 Build controller.</p>
+
+    <p>Around this time I installed VS 2015 Enterprise on the build machine because I intended to use it.</p>
+
+
+    <p><strong>Problem:</strong> Build reports error MSB4019: The imported project "C:\Program Files
+        (x86)\MSBuild\Microsoft\VisualStudio\v12.0\WebApplications\Microsoft.WebApplication.targets" was not found.
+        Confirm that the path in the &lt;Import&gt; declaration is correct, and that the file exists on disk.<br/>
+
+        <strong>Solution:</strong> Added /tv:14.0 to the MSBuild arguments.</p>
+
+
+    <p><strong>Problem:</strong> Build reports error Unhandled Exception: System.TypeInitializationException: The type
+        initializer for 'LibGit2Sharp.Core.NativeMethods' threw an exception. ---&gt; System.BadImageFormatException: An
+        attempt was made to load a program with an incorrect format. (Exception from HRESULT: 0x8007000B)<br/>
+
+        <strong>Solution:</strong> Applied the license key to the installed copy of VS 2015 Ultimate on the build
+        machine.</p>
+
+    <p><strong>Problem:</strong> Build reports error TF900547: The directory containing the assemblies for the Visual
+        Studio Test Runner is not valid<br/>
+
+        <strong>Solution:</strong> Leave Installed/Install/Re-Install VS2013 (I used the Ultimate edition)</p>
+
+    <p><strong>Problem:</strong> Build reports error Unhandled Exception: System.TypeInitializationException: The type
+        initializer for 'LibGit2Sharp.Core.NativeMethods' threw an exception. ---> System.BadImageFormatException: An
+        attempt was made to load a program with an incorrect format. (Exception from HRESULT: 0x8007000B)<br/>
+        at LibGit2Sharp.Core.NativeMethods.git_libgit2_init()<br/>
+        at LibGit2Sharp.Core.NativeMethods.LibraryLifetimeObject..ctor()<br/>
+        at LibGit2Sharp.Core.NativeMethods..cctor()<br/>
+        --- End of inner exception stack trace ---<br/>
+        at LibGit2Sharp.Core.NativeMethods.RemoveHandle()<br/>
+        at LibGit2Sharp.Core.NativeMethods.LibraryLifetimeObject.Finalize()<br/><br/>
+
+        <strong>Solution:</strong> Apply license key to the installed copy of VS 2013 Ultimate on the build machine.</p>
+
+</article>
+
+<h2>Comments</h2>
+<ul>
+    <li>
+        <p><a href="https://www.blogger.com/profile/14441129557512354579">Andrew Miller</a> April 7, 2016 at 1:56 PM</p>
+        <p>Thanks for the post! I had a similar problem - was getting the error TF900547: The directory containing the
+            assemblies for the Visual Studio Test Runner is not valid 'D:\Program Files (x86)\Microsoft Visual Studio
+            14.0\Common7\IDE\CommonExtensions\Microsoft\TestWindow'. It ended up being that even though Visual Studio
+            2015 was installed, the user that the Build Agent was running as didn't have read/execute permissions to
+            that folder.</p>
+    </li>
+    <li>
+        <p><a href="https://www.blogger.com/profile/09012391989454449936">Mokwaja</a> September 26, 2016 at 12:21 PM</p>
+        <p>Thanks for the post! Really helped with this:</p>
+
+        <p>Problem: Build reports error MSB4019: The imported project "C:\Program Files
+            (x86)\MSBuild\Microsoft\VisualStudio\v12.0\WebApplications\Microsoft.WebApplication.targets" was not found.
+            Confirm that the path in the declaration is correct, and that the file exists on disk.<br/>
+
+            Solution: Added /tv:14.0 to the MSBuild arguments.</p>
+
+        <p>Problem: Build reports error Unhandled Exception: System.TypeInitializationException: The type initializer
+            for 'LibGit2Sharp.Core.NativeMethods' threw an exception. ---> System.BadImageFormatException: An attempt
+            was made to load a program with an incorrect format. (Exception from HRESULT: 0x8007000B)<br/>
+
+            Solution: Applied the license key to the installed copy of VS 2015 Ultimate on the build machine.</p>
+    </li>
+</ul>
+</body>
+</html>
