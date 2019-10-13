@@ -16,6 +16,12 @@ h1 {
     color: #AE8ABE;
 }
 
+iframe {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 img {
     display: block;
     max-width: 68%;
