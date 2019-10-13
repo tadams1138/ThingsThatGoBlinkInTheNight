@@ -10,11 +10,9 @@ function GetResource(url, OnSuccess) {
 }
 
 function LoadTOC(url) {
-    let navigationDiv = document.getElementById("navigation");
-    if (navigationDiv !== null) {
-        GetResource(url, function (responseText) {
-            navigationDiv.innerHTML = responseText;
-        });
-    }
+    GetResource(url, function (responseText) {
+        let navigationDiv = document.getElementById("navigation");
+        navigationDiv.innerHTML = responseText;
+    });
 }
 

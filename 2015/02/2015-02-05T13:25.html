@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resolving "No symbols have been loaded for this document" in web projects</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <h1>Resolving "No symbols have been loaded for this document" in web projects</h1>
+
+    <img src="1.png" alt="No symbols have been loaded breakpoint alert">
+
+    <p>I've run into this problem a number of times probably due to my own hackery. I must have copied a project wrong
+        or something. It turns out that not too infrequently I'll start to debug a web project and IIS Express will
+        start to host it, but in fact it is hosting the wrong code in a completely different folder.</p>
+
+    <p>To resolve:</p>
+
+    <ol>
+        <li>Right click IIS Express and note the site name and the ports it is hosted on.<br/>
+            <img src="2.png" alt="IIS Express context menu"></li>
+        <li>Now open C:\Users\<strong>&lt;username&gt;</strong>\Documents\IISExpress\config\applicationhost.config</li>
+        <li>Search for the site name and the port name to find the right site element in the config file.<br/>
+            <img src="3.PNG" alt="applicationhost.config"></li>
+        <li>Verify that the virtualDirectory path is set to the correct folder. If it is not correct (as is clear in the
+            above image), then correct the path and save the config file. Stop debugging and/or shutdown IIS Express.
+            When you start debugging again, you should now be able to breakpoint code you previously could not due to
+            "No symbols have been loaded for this document."
+        </li>
+    </ol>
+
+</article>
+</body>
+</html>
