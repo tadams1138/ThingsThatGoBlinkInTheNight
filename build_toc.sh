@@ -22,6 +22,7 @@ cat >toc.html <<EOF
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <title>Table of Contents</title>
+    <script data-ad-client="ca-pub-1999637070859163" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 </head>
 <body>
 <a href="$siteRoot/rss.xml" class="feed">Subscribe to the feed</a>
