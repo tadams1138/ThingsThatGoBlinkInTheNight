@@ -5,6 +5,11 @@
     <link>https://www.tandisoft.com</link>
     <description>A blog for Tom Adams tech ramblings</description>
     <item>
+      <title>Permutator</title>
+      <link>https://www.tandisoft.com/2021/08/2021-08-18.html</link>
+      <description>Permutator</description>
+    </item>
+    <item>
       <title>Multiple constructors an anti-pattern?</title>
       <link>https://www.tandisoft.com/2019/09/2019-09-15.html</link>
       <description>Multiple constructors an anti-pattern?</description>
