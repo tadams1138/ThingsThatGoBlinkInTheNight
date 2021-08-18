@@ -3,6 +3,8 @@
 <li><a href=/toc.html>Table of Contents</a></li>
 <li><a href=/index.html>Home</a></li>
 <li><a href=/About.html>About</a></li>
+<li><a href=/2021/08/2021-08-18.html>Permutator</a></li>
+<li><a href=/2019/09/2019-09-15.html>Multiple constructors an anti-pattern?</a></li>
 <li><a href=/2019/09/2019-09-15.html>Multiple constructors an anti-pattern?</a></li>
 <li><a href=/2019/06/2019-06-19.html>The Ruminant Pattern</a></li>
 <li><a href=/2018/05/2018-05-31.html>Rule Set Designer</a></li>
@@ -17,5 +19,4 @@
 <li><a href=/2015/09/2015-09-18.html>Adventures in upgrading to TFS to 2015</a></li>
 <li><a href=/2015/08/2015-08-15.html>Downgrading Windows for the first time in my life</a></li>
 <li><a href=/2015/04/2015-04-03.html>Running Unit Tests When TFS Build Definition Output Location is AsConfigured</a></li>
-<li><a href=/2015/02/2015-02-05T15:57.html>Debugging exceptions in other applications</a></li>
 </ul>
