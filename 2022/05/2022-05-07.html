@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76968909-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-76968909-1');
+    </script>
+
+    <meta charset="UTF-8">
+    <title>Stupid segfault</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script type="text/javascript" src="../../scripts.js"></script>
+    <script data-ad-client="ca-pub-1999637070859163" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+</head>
+<body onload="LoadTOC('../../toc.txt')">
+<div class="navigation" id="navigation"><a href="../../toc.html">Table of Contents</a></div>
+<article>
+    <header>
+        <h1>Stupid segfault</h1>
+    </header>
+    <p>I'm embarrassed to say how long I spent trying to debug why a .Net 6 app ran just fine on my local machine but kept failing to complete operations when deployed as a container to a Linux hosted docker container.</p>
+	<p>The back story is that the app was originally a web service hosted in IIS on a Windows 2012 server, but I decided to dockerize the whole app to make scaling easier for me. All unit tests passed with environment variables of course mocked out or otherwise made unnecessary by stubs and mocks. Integration tests passed as well, but those are only ever run on my local machine since they are long running tests and I don't particularly like the CI/CD pipeline to run integration tests that necessarily depend on data in some environment somewhere... Maybe that's part of my core problem. I might revisit that choice later.</p>
+	<p>The behavior I was noticing was a <strong>500 Internal server error</strong> every time I POSTed to a particular endpoint. The GET endpoints did not appear to have this problem, including the ones that connected to 1 of the 2 SQL server databases necessary for this project.</p>
+    <p>Upon examining the logs I could find no trace of an exception logged though I had pretty thorough event logging throughout the app including a try/catch surrounding the WebApplication's Run() method too. Upon SSH'ing into the linux machine and examining the docker container's logs I could see it was writing "Starting web host" to stdout immediately after I invoke the failing endpoint. That's the text I write to the console as the first line of my application.</p>
+
+<pre><code class="bash">docker logs &lt;container name&gt;</code></pre>
+
+<p>At this point I remember that I have my containers configured to restart immediately. And there's nothing in my code that would try to restart the app, so I conclude that it must be Docker starting the container.</p>
+
+<pre><code class="bash">docker run --restart=always ...</code></pre>
+
+<p>Next I decide I'm going to manually run the app in the container changing the entry point.</p>
+
+<pre><code class="bash">docker run -it --entrypoint /bin/bash --publish 80 mydockerhub.net:1234/webApp1:1.2.3.4 -s
+dotnet webApp1.dll</code></pre>
+
+<p>After first shutting down any other instances of the app, I again invoke the failing endpoint and wait to see what will happen. It writes</p>
+<img src="segfault.png" alt="Segmentation fault (core dumped)" />
+
+<p>Well... just what the heck do I do with this? As you may have already guessed, I placed debug/trace log entries like "Here1" around every significant line of code until I found the offending line of code. I originally thought it was a mismatch of SQL client nuget packages (System.Data.SqlClient 4.8.3 vs Microsoft.Data.SqlClient 4.1.0 both of which are used in this project) following my .netcore 3 IIS dotnet app -> .net 6 dockerized app conversion. But after another dev I work with suggested I look at the connection strings, I noticed that the code <strong>in that evnvironment</strong> around the segfault was using something like the following in the DI:</p>
+
+<pre><code class="CSharp">ServiceBrokerConnectionString=Server=DB-Host-Name;Database=ServiceBroker;Integrated Security=True;MultipleActiveResultSets=True;Connection Timeout=60;TrustServerCertificate=True;</code></pre>
+
+<p>Integrated security?!? That made sense in the IIS hosted app that was run by an app pool logged in under a specific AD account. But running as a container in a Linux hosted docker environment, that makes a lot less sense. Obviously I overlooked something in the deployment script when I switched to a dockerized solution. That much I'll own up to. So I change the connection string to something like:</p>
+
+<pre><code class="CSharp">ServiceBrokerConnectionString=Data Source=DB-Host-Name;Initial Catalog=ServiceBroker;User Id=bob;Password=bobHasAnInsecurePassword</code></pre>
+
+<p>After running it again, everything runs just fine. The endpoint completes all calls without error. My conclusion: "Integrated security" can cause a segfault with no thrown exceptions and nothing valuable logged when run in a Linux hosted docker environment.</p>
+
+<p>So... what the hell?! Someone should be punched for this. Someone besides me.</p>
+</article>
+</body>
+</html>
