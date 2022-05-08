@@ -27,3 +27,10 @@ After first shutting down any other instances of the app, I again invoke the fai
 Segmentation fault (core dumped)
 ```
 
+ServiceBrokerConnectionString=Server=DB-Host-Name;Database=ServiceBroker;Integrated Security=True;MultipleActiveResultSets=True;Connection Timeout=60;TrustServerCertificate=True;
+ServiceBrokerConnectionString=Data Source=DB-Host-Name;Initial Catalog=ServiceBroker;User Id=bob;Password=bobHasAnInsecurePassword
+ 
+ 
+
+ 
+ 
